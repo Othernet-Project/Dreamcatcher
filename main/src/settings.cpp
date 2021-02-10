@@ -1,0 +1,160 @@
+#include "Preferences.h"
+
+#include "customize.h"
+#include "settings.h"
+#include "wifi.h"
+
+Preferences prefs;
+uint8_t CPU_USAGE;
+
+void loadSettings()
+{
+  prefs.begin("lora");
+  // LoRa settings
+  Frequency = prefs.getUInt("freq", 2401000000);
+  Bandwidth = prefs.getUChar("bw", LORA_BW_0800);          //LoRa bandwidth
+  SpreadingFactor = prefs.getUChar("sf", LORA_SF9);        //LoRa spreading factor
+  CodeRate = prefs.getUChar("cr", LORA_CR_4_5);            //LoRa coding rate
+
+  // wifi settings
+  String ssid_ap = prefs.getString("apssid", EXAMPLE_ESP_WIFI_SSID);
+  String pass_ap = prefs.getString("appass", EXAMPLE_ESP_WIFI_PASS);
+
+  char ssid_sta[32] = {0};
+  char pass_sta[32] = {0};
+
+  prefs.getString("stapass", pass_sta, 32);
+  initWifi(ssid_ap.c_str(), pass_ap.c_str());
+
+  if (prefs.getString("stassid", ssid_sta, 32))
+  {
+    wifi_init_sta(ssid_sta, pass_sta);
+  }
+
+  // other settings
+
+  prefs.end();
+}
+
+extern "C" void storeWifiCredsAP(char* ssid, char* pass)
+{
+  prefs.begin("lora", false);
+  prefs.putString("apssid", ssid);
+  prefs.putString("appass", pass);
+  prefs.end();
+}
+
+extern "C" void storeWifiCredsSTA(char* ssid, char* pass)
+{
+  prefs.begin("lora", false);
+  prefs.putString("stassid", ssid);
+  prefs.putString("stapass", pass);
+  prefs.end();
+}
+
+void storeLoraSettings()
+{
+  prefs.begin("lora", false);
+  prefs.putUInt("freq", Frequency);
+  prefs.putUChar("bw", Bandwidth);
+  prefs.putUChar("sf", SpreadingFactor);
+  prefs.putUChar("cr", CodeRate);
+  prefs.end();
+}
+
+//-------------------------------------------------//
+
+/**
+ * Helper function to encode URL with %20 (space) in folder/file name
+ * 
+ */
+unsigned char h2int(char c)
+{
+    if (c >= '0' && c <='9'){
+        return((unsigned char)c - '0');
+    }
+    if (c >= 'a' && c <='f'){
+        return((unsigned char)c - 'a' + 10);
+    }
+    if (c >= 'A' && c <='F'){
+        return((unsigned char)c - 'A' + 10);
+    }
+    return(0);
+}
+
+void urldecode(char* file)
+{
+    String str = String(file);
+    String encodedString="";
+    char c;
+    char code0;
+    char code1;
+    for (int i =0; i < str.length(); i++){
+        c=str.charAt(i);
+      if (c == '+'){
+        encodedString+=' ';  
+      }else if (c == '%') {
+        i++;
+        code0=str.charAt(i);
+        i++;
+        code1=str.charAt(i);
+        c = (h2int(code0) << 4) | h2int(code1);
+        encodedString+=c;
+      } else{
+        
+        encodedString+=c;  
+      }
+      
+      yield();
+    }
+  
+    memset(file, 0, strlen(file));
+    strlcpy(file, encodedString.c_str(), encodedString.length() + 1);
+}
+
+//-------------------------------------------------//
+
+void vTaskGetRunTimeStats2( )
+{
+  TaskStatus_t *pxTaskStatusArray;
+  volatile UBaseType_t uxArraySize, x;
+  uint32_t ulTotalRunTime, ulStatsAsPercentage = 0;
+
+   /* Take a snapshot of the number of tasks in case it changes while this
+   function is executing. */
+   uxArraySize = uxTaskGetNumberOfTasks();
+
+   /* Allocate a TaskStatus_t structure for each task.  An array could be
+   allocated statically at compile time. */
+   pxTaskStatusArray = (TaskStatus_t *)heap_caps_calloc(uxArraySize, sizeof( TaskStatus_t ) ,MALLOC_CAP_SPIRAM);
+
+   if( pxTaskStatusArray != NULL )
+   {
+      /* Generate raw status information about each task. */
+      uxArraySize = uxTaskGetSystemState( pxTaskStatusArray,
+                                 uxArraySize,
+                                 &ulTotalRunTime );
+
+      /* For percentage calculations. */
+      ulTotalRunTime /= 100UL;
+
+      /* Avoid divide by zero errors. */
+      if( ulTotalRunTime > 0 )
+      {
+         /* For each populated position in the pxTaskStatusArray array,
+         format the raw data as human readable ASCII data. */
+         for( x = 0; x < uxArraySize; x++ )
+         {
+            if (strcmp("IDLE", pxTaskStatusArray[ x ].pcTaskName) == 0)
+            {
+              ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+              CPU_USAGE = 100 - ulStatsAsPercentage;
+              break;
+            }
+         }
+      }
+
+      /* The array is no longer needed, free the memory it consumes. */
+      vPortFree( pxTaskStatusArray );
+   }
+}

@@ -1,0 +1,33 @@
+<!-- <table id='filestree'></table> -->
+
+<!-- <script> 
+let files_tree_json = [{"path":"/files/tmp", "dir":0,"name":"tmp", "type":"directory", "size":"1230", }, {"path":"/files/News", "dir":1,"name":"News", "type":"directory", "size":"0" }, {"path":"/files/Amateur Radio", "dir":1,"name":"Amateur Radio", "type":"directory", "size":"0" }];
+</script> -->
+
+<!-- <script> 
+function filestree(){
+    let tree = document.getElementById("filestree");
+    tree.innerHTML = "";
+
+    files_tree_json.forEach(element => {
+        tr = document.createElement("tr");
+        let a = document.createElement("a");
+        a.href = element.dir?element.path + '/':element.path;
+        a.text = element.name;
+        a.target = element.dir?"_self":"_blank";
+        td1 = document.createElement("td");
+        td1.appendChild(a);
+        td2 = document.createElement("td");
+        td2.innerHTML = element.dir?"directory":"file";
+        td3 = document.createElement("td");
+        td3.innerHTML = element.size;
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tree.appendChild(tr);
+    });
+} 
+</script> -->
+<script>
+filestree();
+</script>

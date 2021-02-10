@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Dreamcatcher</title>
+  <script src="app.js"></script>
+  <link rel="stylesheet" href="app.css">
+  <script src="myip.js"></script>
+</head>
+
+<body>
+  <div class="modal" id='spinner'>
+    <div style="width: 320px;">
+      <img src='spinner.gif' />
+    </div>
+  </div>
+  <div class="main-content">
+    <h1>Othernet SX1280 project</h1>
+    <div class="connect-container">
+      <span id="status"></span>
+      <button id="settingsBtn" class="button black">Settings</button>
+      <button id="wifi" class="button black">Setup wifi</button>
+      <button id="tree" class="button black">Files</button>
+      <button id="format" class="button black">Format SD card</button>
+    </div>
+    <div style="background-color: #216cb7; max-width: 400px;">
+      <!-- <span class="close">&times;</span> -->
+      <div class="container">
+        <div class="receiver" style="max-width: 400px">
+          <div class="lines-header">Hardware:</div>
+          <table style="min-width: 300px;">
+            <tr>
+              <td>Hardware version: </td>
+              <td id="hw" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Firmware version: </td>
+              <td id="fw" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>LNB enable: </td>
+              <td style='text-align: right;'><input type=checkbox id="ldo" onclick="return false;" /></td>
+            </tr>
+            <tr>
+              <td>LNB in range: </td>
+              <td style='text-align: right;'><input type=checkbox id="range" onclick="return false;" /></td>
+            </tr>
+            <tr>
+              <td>LNB connected: </td>
+              <td style='text-align: right;'><input type=checkbox id="cable" onclick="return false;" /></td>
+            </tr>
+            <tr>
+              <td>LNB voltage: </td>
+              <td id="volt" style='text-align: right;'>0</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div id="myModal" class="modal"> -->
+    <!-- Modal content -->
+    <div style="background-color: #216cb7; max-width: 400px;">
+      <!-- <span class="close">&times;</span> -->
+      <div class="container">
+        <div class="receiver" style="max-width: 400px">
+          <div class="lines-header">Statistics:</div>
+          <table style="min-width: 300px;">
+            <tr>
+              <td>Packets received: </td>
+              <td id="received" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>RSSI: </td>
+              <td id="rssi" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>SNR: </td>
+              <td id="snr" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>CRC errors: </td>
+              <td id="crc" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Header errors: </td>
+              <td id="header" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Bitrate: </td>
+              <td id="bitrate" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>CPU utilization: </td>
+              <td id="cpu" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Free heap: </td>
+              <td id="ram1" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Min free heap: </td>
+              <td id="ram2" style='text-align: right;'>0</td>
+            </tr>
+            <tr>
+              <td>Free spiram: </td>
+              <td id="ram3" style='text-align: right;'>0</td>
+            </tr>
+            <!-- <tr>
+              <td>Last file: </td>
+              <td id="file" style='text-align: right;'></td>
+            </tr> -->
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- </div> -->
+
+    <div id="myModal1" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content" style="background-color: #216cb7;max-width: 400px;">
+        <span id='close2' class="close">&times;</span>
+        <div class="container">
+          <div class="receiver" style="max-width: 400px; min-width: 320px;">
+            <input type="checkbox" id="en_ap">AP </input>
+            <div id="ap_content" hidden>
+              <div class="lines-header">Wifi access point:</div>
+              <label for="ap_ssid">AP ssid: </label><input id="ap_ssid" style="position: relative; left: 75px;"/></br>
+              <label for="ap_pass">AP password: </label><input id="ap_pass" style="position: relative; left: 40px;" /></br>
+              <label for="enc_type">Auth mode: </label>
+              <select id="auth" style="position: relative; left: 8px;">
+                <option value=0>WIFI_AUTH_OPEN</option>
+                <option value=1>WIFI_AUTH_WEP</option>
+                <option value=2>WIFI_AUTH_WPA_PSK</option>
+                <option value=3>WIFI_AUTH_WPA2_PSK</option>
+                <option value=4>WIFI_AUTH_WPA_WPA2_PSK</option>
+                <option value=5>WIFI_AUTH_WPA2_ENTERPRISE</option>
+                <option value=6>WIFI_AUTH_WPA3_PSK</option>
+                <option value=7>WIFI_AUTH_WPA2_WPA3_PSK</option>
+              </select></br>
+
+              <a href='' id='ap_ip' hidden>Connect device</a>
+              <button id="ap_btn" class="button black">Setup wifi</button>
+              </br></br>
+            </div>
+
+            <input type="checkbox" id="en_sta">STA</input>
+            <div id="sta_content" hidden>
+              <div class="lines-header">Wifi station:</div>
+              <label for="sta_ssid">STA ssid: </label><input id="sta_ssid"  style="position: relative; left: 70px;"/></br>
+              <label for="sta_pass">STA password: </label><input id="sta_pass"  style="position: relative; left: 35px;"/></br>
+              <a href='' id='sta_ip' hidden>Connect device</a>
+              <button id="sta_btn" class="button black">Connect wifi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <p>Copyright <a href="https://othernet.is" target="_blank">Othernet Inc.</a></p>
+    </footer>
+    <div id="myModal2" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content" style="background-color: #216cb7">
+        <span id='close3' class="close">&times;</span>
+        <div class="container">
+          <div class="receiver" style="max-width: 400px">
+            <h2>ESP32 Files tree</h2>
+            <table id='filestree' class="filestree"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id='settingsForm' class="modal">
+      <div class="modal-content" style="background-color: #216cb7;max-width: 420px;">
+        <span id='close4' class="close">&times;</span>
+        <div class="lines-header">Settings:</div>
+        <div id="modelSX1280">
+          <div style="padding-bottom: 10px;"><label for="freq1">Frequency</label> <input id="freq1"
+              style="position: relative; left: 120px;" value=40000000 /></div>
+          <div style="padding-bottom: 10px;">
+            <label>Bandwidth: </label>
+            <select id="bw1" style="position: relative; left: 175px;">
+              <option value=52>LORA_BW_0200</option>
+              <option value=38>LORA_BW_0400</option>
+              <option value=24>LORA_BW_0800</option>
+              <option value=10>LORA_BW_1600</option>
+            </select>
+          </div>
+          <div style="padding-bottom: 10px;">
+            <label>Spreading factor: </label>
+            <select id="sf1" style="position: relative; left: 163px;">
+              <option value=80>LORA_SF5</option>
+              <option value=96>LORA_SF6</option>
+              <option value=112>LORA_SF7</option>
+              <option value=128>LORA_SF8</option>
+              <option value=144>LORA_SF9</option>
+              <option value=160>LORA_SF10</option>
+              <option value=176>LORA_SF11</option>
+              <option value=192>LORA_SF12</option>
+            </select>
+          </div>
+          <div style="padding-bottom: 10px;">
+            <label>Coding rate: </label>
+            <select id="cr1" style="position: relative; left: 175px;">
+              <option value=1>LORA_CR_4_5</option>
+              <option value=2>LORA_CR_4_6</option>
+              <option value=3>LORA_CR_4_7</option>
+              <option value=4>LORA_CR_4_8</option>
+            </select>
+          </div>
+        </div>
+        <button id="settingsSend" class="button black">Send</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

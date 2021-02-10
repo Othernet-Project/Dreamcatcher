@@ -1,0 +1,7 @@
+[submodule "components/SX12XX-LoRa"]
+	path = components/SX12XX-LoRa
+	url = https://github.com/chegewara/SX12XX-LoRa
+[submodule "components/arduino"]
+	path = components/arduino
+	url = https://github.com/espressif/arduino-esp32.git
+	branch = idf-release/v4.2
