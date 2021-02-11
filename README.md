@@ -42,23 +42,18 @@ cp CMakeLists.txt_arduino-esp32 components/arduino/CMakeLists.txt
 
 ### Build Firmware for a Target & flash
 
+First export idf so you can use the idf.py commands: `.~/esp/esp-idf/export.sh`.
+
 You can build for ESP32s2 (DC4 Board) or ESP32 (if you have one for testing for example), just replace the content of sdkconfig with either sdkconfig-esp32 or sdkconfig-esp32s2.
-Default sdkconfig is for esp32s2, to build run the following:
-```
-.~/esp/esp-idf/export.sh
-idf.py build
-```
+The Default sdkonfig is equal to ESP32s2, if you setup the sdkconfig you want run `idf.py build`.
+
+There is also a build.sh you can use to build for both ESPs at once, just export idf with `.~/esp/esp-idf/export.sh` and then run `./build.sh`.
+
 If that is successful you can flash your ESP Board, connect it to your PC and use `dmesg | grep tty` to find your serial device id.
 
 Then use `sudo chown username /dev/ttyUSB0` to set the Permissions as needed (repalce username with your user and ttyUSB0 with your serial ID).
 
 After this you can Flash your board with `idf.py -p /dev/ttyUSB0 flash`.
-
-## Build options
-
-When esp-idf environment is prepared there is 2 options to build binaries:
-* as usual with idf.py build, for each chip model there is prepared sdkconfig file to use as template,
-* with build.sh scipt (linux version only), which will build for esp32 and esp32-S2, both version at the same time.
 
 ## Possible runtime issues
 
