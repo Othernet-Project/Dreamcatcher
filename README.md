@@ -6,22 +6,56 @@ This firmware is used to control the voltage to a standard, commercially-availab
 
 The ESP32 can create a wifi access point and also connect to an existing wifi network. By defaul, Dreamcatcher operates in access point (AP) mode. Changes to wifi settings can be made through the web interface. Configuration of the SX1281 (frequency, spreading factor, coding rate) is also done through the web interface.
 
- 
-
-<h2>Getting started</h2>
+# Getting started
 
 This application is prepared to build with arduino as component. Easiest way is to clone with `git clone --recursive`.
 Because most recent arduino release (v4.x) is in beta stage this application was prepared and tested with particular esp-idf commit. Curently it is https://github.com/espressif/esp-idf/commit/b0150615dff529662772a60dcb57d5b559f480e2
 
 Some settings can be changed in `customize.h`.
 
-<h2>Build options</h2>
+## Building on Ubuntu/Debian
+To setup everything and build the Dreamcatcher 4 Firmware you can follow the following Steps on Ubuntu/Debian (tested on Ubuntu 18.04).
 
-When esp-idf environment is prepared there is 2 options to build binaries:
-* as usual with idf.py build, for each chip model there is prepared sdkconfig file to use as template,
-* with build.sh scipt (linux version only), which will build for esp32 and esp32-S2, both version at the same time.
+### Install needed packages & Setup python 3 as default
+```
+sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
+```
+### Install esp-idf at Commit b0150615dff529662772a60dcb57d5b559f480e2
+```
+mkdir -p ~/esp
+cd ~/esp
+git clone https://github.com/espressif/esp-idf.git
+cd esp-idf,
+git checkout b0150615dff529662772a60dcb57d5b559f480e2
+git submodule update --init --recursive
+./install.sh
+```
+### Prepare Dreamcatcher Firmware
 
-<h2>Possible runtime issues</h2>
+go to a folder you like and do the following commands
+```
+git clone --recursive https://github.com/Othernet-Project/Dreamcatcher.git
+cd Dreamcatcher
+cp CMakeLists.txt_arduino-esp32 components/arduino/CMakeLists.txt
+```
+
+### Build Firmware for a Target & flash
+
+First export idf so you can use the idf.py commands: `. ~/esp/esp-idf/export.sh`.
+
+You can build for ESP32s2 (DC4 Board) or ESP32 (if you have one for testing for example), just replace the content of sdkconfig with either sdkconfig-esp32 or sdkconfig-esp32s2.
+The Default sdkonfig is equal to ESP32s2, if you setup the sdkconfig you want run `idf.py build`.
+
+There is also a build.sh you can use to build for both ESPs at once, just export idf with `. ~/esp/esp-idf/export.sh` and then run `./build.sh`.
+
+If that is successful you can flash your ESP Board, connect it to your PC and use `dmesg | grep tty` to find your serial device id.
+
+Then use `sudo usermod -a -G dialout $USER` to set the Permissions as needed, you need to restart/relogin to make the changes take affect.
+
+After this you can Flash your board with `idf.py -p /dev/ttyUSB0 flash`.
+
+## Possible runtime issues
 
 * there is change in esp-idf i2c and arduino-esp32 has not been updated yet, this requires to update `esp32-hal-i2c.c` line 1819 with code `i2c_config_t conf = {0};`
 * some changes may be required in https://github.com/espressif/arduino-esp32/blob/idf-release/v4.2/CMakeLists.txt, in this repository is included file with fixed content:
