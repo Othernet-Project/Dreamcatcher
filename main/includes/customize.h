@@ -2,10 +2,14 @@
 #include "sdkconfig.h"
 
 #define HW_VERSION "2021.01"
-#define FW_VERSION "1.0.0-beta"
+#define FW_VERSION "1.0.1-beta"
 
 #define EXAMPLE_ESP_WIFI_SSID      "esp32s3"
 #define EXAMPLE_ESP_WIFI_PASS      "12345678"
+#define DEFAULT_FREQUENCY 2400000000
+#define DEFAULT_BW LORA_BW_0800
+#define DEFAULT_SF LORA_SF9
+#define DEFAULT_CR LORA_CR_4_5
 
 #define LNB_ADDRESS 0x08 // or 0x09
 

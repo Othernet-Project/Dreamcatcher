@@ -23,6 +23,9 @@ extern "C" {
 
 #define Program_Version "V1.0"
 
+extern uint8_t defaultsPin;
+extern unsigned long resetStart;
+
 //*******  Setup LoRa Parameters Here ! ***************
 
 //LoRa Modem Parameters
@@ -53,7 +56,7 @@ void storeWifiCredsSTA(char* ssid, char* pass);
 void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
 uint16_t countBitrate(uint16_t update);
 void vTaskGetRunTimeStats2();
-
+void setDefaults();
 extern xQueueHandle rxQueue;
 
 #ifdef __cplusplus
