@@ -7,14 +7,26 @@
 Preferences prefs;
 uint8_t CPU_USAGE;
 
+static void setDefaultsIRQ()
+{
+  defaultsPin = digitalRead(0);
+  if (!defaultsPin)
+  {
+    Serial.printf("pin0 status: %d, time: %ld\n", defaultsPin, millis());
+    resetStart = millis();
+  } else {
+    Serial.println("stop IO0");
+  }
+}
+
 void loadSettings()
 {
   prefs.begin("lora");
   // LoRa settings
-  Frequency = prefs.getUInt("freq", 2401000000);
-  Bandwidth = prefs.getUChar("bw", LORA_BW_0800);          //LoRa bandwidth
-  SpreadingFactor = prefs.getUChar("sf", LORA_SF9);        //LoRa spreading factor
-  CodeRate = prefs.getUChar("cr", LORA_CR_4_5);            //LoRa coding rate
+  Frequency = prefs.getUInt("freq", DEFAULT_FREQUENCY);
+  Bandwidth = prefs.getUChar("bw", DEFAULT_BW);
+  SpreadingFactor = prefs.getUChar("sf", DEFAULT_SF);
+  CodeRate = prefs.getUChar("cr", DEFAULT_CR);
 
   // wifi settings
   String ssid_ap = prefs.getString("apssid", EXAMPLE_ESP_WIFI_SSID);
@@ -31,9 +43,8 @@ void loadSettings()
     wifi_init_sta(ssid_sta, pass_sta);
   }
 
-  // other settings
-
   prefs.end();
+  attachInterrupt(0, setDefaultsIRQ,CHANGE);
 }
 
 extern "C" void storeWifiCredsAP(char* ssid, char* pass)
@@ -60,6 +71,12 @@ void storeLoraSettings()
   prefs.putUChar("sf", SpreadingFactor);
   prefs.putUChar("cr", CodeRate);
   prefs.end();
+}
+
+void setDefaults()
+{
+  storeWifiCredsAP(EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+  updateLoraSettings(DEFAULT_FREQUENCY, DEFAULT_BW, DEFAULT_SF, DEFAULT_CR);
 }
 
 //-------------------------------------------------//

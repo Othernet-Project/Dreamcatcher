@@ -16,8 +16,6 @@
 
 
 char myIP[20] = "192.168.4.1";
-char *hw_version = HW_VERSION;
-char *fw_version = FW_VERSION;
 
 #define QUEUE_LENGTH 10
 xTaskHandle rxTaskHandle = NULL;
@@ -27,6 +25,10 @@ static uint64_t lastUpdate = 0;
 uint16_t bitrate = 0;
 
 static bool bWire;
+bool sdCardPresent;
+
+uint8_t defaultsPin = 1;
+unsigned long resetStart = 0;
 
 void loop()
 {
@@ -38,9 +40,17 @@ void loop()
     if(bWire) lnbStatus();
     vTaskGetRunTimeStats2();
   }
+
+  if (resetStart + 5000 < millis() && !defaultsPin)
+  {
+    defaultsPin = 1;
+    Serial.print("Reset to defaults ");
+    setDefaults();
+  }
+  
   delay(10);
 }
-bool sdCardPresent;
+
 void setup()
 {
   Serial.begin(115200);
