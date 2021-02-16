@@ -14,6 +14,18 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <driver/sdmmc_defs.h>
+#include <driver/sdspi_host.h>
+#include <driver/sdmmc_types.h>
+#include <driver/sdspi_host.h>
+#include <esp_spiffs.h>
+#include <esp_vfs_fat.h>
+#include <sdmmc_cmd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "diskio.h"
+#include <fcntl.h>
+
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -57,6 +69,24 @@ struct web_server_data {
 
 static const char *TAG = "web_server";
 static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
+void getFreeStorageSPIFFS(uint64_t* total, uint64_t* used);
+
+static void getFreeSpace(uint64_t* used_space, uint64_t* max_space)
+{
+    if(sdCardPresent) {
+        FATFS *fs;
+        DWORD c;
+        if (f_getfree("/files", &c, &fs) == FR_OK)
+        {
+            *used_space =
+                ((uint64_t)fs->csize * (fs->n_fatent - 2 - fs->free_clst)) * fs->ssize;
+            *max_space = ((uint64_t)fs->csize * (fs->n_fatent - 2)) * fs->ssize;
+        }
+    } else {
+        *used_space = 1;
+        *max_space = 1;
+    }
+}
 
 /**
  * Make files tree to JSON string
@@ -271,6 +301,8 @@ static const char ws_json[] = \
 \"ldo\":\"%d\",\
 \"volt\":\"%.1f\",\
 \"bitrate\":\"%d\",\
+\"used\":\"%llu\",\
+\"max\":\"%llu\",\
 \"filepath\":\"%s\",\
 \"filename\":\"%s\"}";
 
@@ -282,10 +314,13 @@ static void ws_async_send(void *arg)
     extern uint32_t packetsRX;
     extern int detectedLNB;  // bit2 - connected, bit5 - LDO_ON, bit1 - in range
     extern float voltage;
-    extern uint16_t bitrate;
+    extern uint32_t bitrate;
     extern uint8_t CPU_USAGE;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
+    uint64_t used_space = 0;
+    uint64_t max_space = 0;
+    getFreeSpace(&used_space, &max_space);
 
     int8_t snr = 0, rssi = 0, ssnr = 0;
     uint16_t crc = 0, header = 0;
@@ -311,6 +346,8 @@ static void ws_async_send(void *arg)
         detectedLNB,
         voltage,
         bitrate,
+        used_space,
+        max_space,
         "path",
         "test_file"
     );
@@ -318,7 +355,6 @@ static void ws_async_send(void *arg)
     ws_pkt.payload = (uint8_t*)data;
     ws_pkt.len = strlen(data);
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-    vTaskDelay(1000);                   // delay between ws packets, handled here because its easier than js
 
     httpd_ws_send_frame_async(hd, fd, &ws_pkt);
     free(resp_arg);
