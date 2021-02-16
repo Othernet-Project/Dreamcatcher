@@ -19,13 +19,13 @@
 static char VFS_MOUNT[] = "/files";
 uint8_t pdrv;
 uint32_t _blocks;
-    struct dirent *entry;
-    struct stat entry_stat;
+struct dirent *entry;
+struct stat entry_stat;
+static size_t spiffstotal = 0, spiffsused = 0;
 
 esp_err_t initSDcard()
 {
     pinMode(SD_CS, OUTPUT); //VSPI SS
-    // pinMode(SD_SCK, OUTPUT); //VSPI SS
     gpio_set_pull_mode(SD_MISO, GPIO_PULLUP_ONLY);   // CMD, needed in 4- and 1- line modes
     gpio_set_pull_mode(SD_MOSI, GPIO_PULLUP_ONLY);    // D0, needed in 4- and 1-line modes
     gpio_set_pull_mode(SD_CS, GPIO_PULLUP_ONLY);   // D3, needed in 4- and 1-line modes
@@ -46,7 +46,7 @@ esp_err_t initSDcard()
     // on ESP32-S2, DMA channel must be the same as host id
     #define SPI_DMA_CHAN host.slot
 
-    spi_bus_config_t bus_cfg = {0};
+    spi_bus_config_t bus_cfg = {};
     bus_cfg.mosi_io_num = SD_MOSI,
     bus_cfg.miso_io_num = SD_MISO,
     bus_cfg.sclk_io_num = SD_SCK,
@@ -146,12 +146,11 @@ esp_err_t initSPIFFS()
         return ret;
     }
 
-    size_t total = 0, used = 0;
-    ret = esp_spiffs_info(conf.partition_label, &total, &used);
+    ret = esp_spiffs_info(conf.partition_label, &spiffstotal, &spiffsused);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
     } else {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", spiffstotal, spiffsused);
     }
 
     cleanup();
@@ -196,4 +195,10 @@ extern "C" esp_err_t formatSD()
     ESP_LOGW(TAG, "partitioning card finished");
     free(workbuf);
     return err;
+}
+
+extern "C" void getFreeStorageSPIFFS(uint64_t* total, uint64_t* used)
+{
+    *total = spiffstotal;
+    *used = spiffsused;
 }
