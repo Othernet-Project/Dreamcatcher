@@ -2,16 +2,16 @@
 #include "sdkconfig.h"
 
 #define HW_VERSION "2021.01"
-#define FW_VERSION "1.0.1-beta"
+#define FW_VERSION "1.1.0-beta"
 
-#define EXAMPLE_ESP_WIFI_SSID      "esp32s3"
-#define EXAMPLE_ESP_WIFI_PASS      "12345678"
+#define EXAMPLE_ESP_WIFI_SSID      "Othernet DC4"
+#define EXAMPLE_ESP_WIFI_PASS      "othernet"
 #define DEFAULT_FREQUENCY 2400000000
 #define DEFAULT_BW LORA_BW_0800
 #define DEFAULT_SF LORA_SF9
 #define DEFAULT_CR LORA_CR_4_5
 
-#define LNB_ADDRESS 0x08 // or 0x09
+#define LNB_ADDRESS 0x09 // older boards 0x08, DC4 0121 rev002 0x09
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define SD_MISO  (gpio_num_t)37
