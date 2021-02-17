@@ -245,7 +245,7 @@ let myip = '192.168.4.1';
 
         webSocket.onmessage = function (event) {
             updateStats(event.data);
-            webSocket.send("get stats");
+            setTimeout(function(){ webSocket.send("get stats"); }, 1000);
         };
     
     });
@@ -313,6 +313,21 @@ let myip = '192.168.4.1';
         try {
             let ram3 = document.getElementById("ram3");
             ram3.innerText = msg.psram;
+        } catch (error) {}
+        try {
+            let used = document.getElementById("used");
+            var original = msg.used / (1024*1024);
+            used.innerText = Math.round(original*100)/100 + 'MB';
+        } catch (error) {}
+        try {
+            let max = document.getElementById("max");
+            var original = msg.max / (1024*1024);
+            max.innerText = Math.round(original*100)/100 + 'MB';
+        } catch (error) {}
+        try {
+            let free = document.getElementById("free");
+            var original = (msg.max - msg.used) / (1024*1024);
+            free.innerText = Math.round(original*100)/100 + 'MB';
         } catch (error) {}
         try {
             let name = document.getElementById("file");

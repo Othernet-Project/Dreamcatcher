@@ -14,20 +14,20 @@
 #define LNB_ADDRESS 0x08 // or 0x09
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
-#define SD_MISO  (gpio_num_t)36
-#define SD_MOSI  (gpio_num_t)35
-#define SD_SCK   (gpio_num_t)34
-#define SD_CS    (gpio_num_t)33
+#define SD_MISO  (gpio_num_t)37
+#define SD_MOSI  (gpio_num_t)39
+#define SD_SCK   (gpio_num_t)38
+#define SD_CS    (gpio_num_t)40
 
 // LoRa SPI
-#define LORA_NSS 7                                   //select pin on LoRa device
-#define LORA_SCK 4                                  //LORA_SCK on SPI3
-#define LORA_MISO 6                                 //LORA_MISO on SPI3 
-#define LORA_MOSI 5                                 //LORA_MOSI on SPI3 
+#define LORA_NSS 14                                   //select pin on LoRa device
+#define LORA_SCK 12                                  //LORA_SCK on SPI3
+#define LORA_MISO 13                                 //LORA_MISO on SPI3 
+#define LORA_MOSI 11                                 //LORA_MOSI on SPI3 
 
-#define NRESET 8                               //reset pin on LoRa device
-#define RFBUSY 9                               //busy line
-#define DIO1 10                                 //DIO1 pin on LoRa device, used for RX and TX done 
+#define NRESET 3                               //reset pin on LoRa device
+#define RFBUSY 33                               //busy line
+#define DIO1 2                                 //DIO1 pin on LoRa device, used for RX and TX done 
 
 // I2C
 #define I2C_SDA 16
