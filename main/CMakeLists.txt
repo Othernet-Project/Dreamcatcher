@@ -12,7 +12,7 @@ set(SRCS
 )
 idf_component_register(SRCS ${SRCS} 
                         INCLUDE_DIRS "includes" "ondd" 
-                        EMBED_FILES "embedded/files_tree.html" "embedded/index.html" "embedded/app.js" "embedded/app.css" "embedded/spinner.gif")
+                        EMBED_FILES "embedded/index.html" "embedded/app.js" "embedded/app.css.gz")
 
 add_prebuilt_library(carousel "ondd/${target_name}/libcarousel.a" PRIV_REQUIRES arduino spiffs fatfs spi_flash sdmmc)
 target_link_libraries(${COMPONENT_LIB} PRIVATE carousel)

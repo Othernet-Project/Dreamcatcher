@@ -45,10 +45,8 @@ extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
 extern const char app_js_start[] asm("_binary_app_js_start");
 extern const char app_js_end[]   asm("_binary_app_js_end");
-extern const char app_css_start[] asm("_binary_app_css_start");
-extern const char app_css_end[]   asm("_binary_app_css_end");
-extern const char spinner_gif_start[] asm("_binary_spinner_gif_start");
-extern const char spinner_gif_end[]   asm("_binary_spinner_gif_end");
+extern const char app_css_start[] asm("_binary_app_css_gz_start");
+extern const char app_css_end[]   asm("_binary_app_css_gz_end");
 
 /* Max length a file path can have on storage */
 #define FILE_PATH_MAX 255
@@ -227,6 +225,8 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filena
         return httpd_resp_set_type(req, "text/html");
     } else if (IS_FILE_EXT(filename, ".jpeg")) {
         return httpd_resp_set_type(req, "image/jpeg");
+    } else if (IS_FILE_EXT(filename, ".png")) {
+        return httpd_resp_set_type(req, "image/png");
     } else if (IS_FILE_EXT(filename, ".ico")) {
         return httpd_resp_set_type(req, "image/x-icon");
     } else if (IS_FILE_EXT(filename, ".mpg")) {
@@ -420,16 +420,6 @@ static esp_err_t appjs_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-static esp_err_t spinner_handler(httpd_req_t *req)
-{
-    set_content_type_from_file(req, "spinner.gif");
-    httpd_resp_send_chunk(req, spinner_gif_start, spinner_gif_end - spinner_gif_start);
-
-    /* Respond with an empty chunk to signal HTTP response completion */
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
-
 static esp_err_t myipjs_handler(httpd_req_t *req)
 {
     extern uint32_t Frequency;
@@ -450,6 +440,7 @@ static esp_err_t myipjs_handler(httpd_req_t *req)
 static esp_err_t appcss_handler(httpd_req_t *req)
 {
     set_content_type_from_file(req, "app.css");
+    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     httpd_resp_send_chunk(req, app_css_start, app_css_end - app_css_start);
 
     /* Respond with an empty chunk to signal HTTP response completion */
@@ -606,7 +597,7 @@ static esp_err_t files_tree_handler(httpd_req_t *req)
     size_t chunksize;
     do {
         /* Read file in chunks into the scratch buffer */
-        chunksize = fread(chunk, 1, 512, fd);
+        chunksize = fread(chunk, 1, 4096, fd);
 
         if (chunksize > 0) {
             esp_err_t err;
@@ -621,7 +612,6 @@ static esp_err_t files_tree_handler(httpd_req_t *req)
                return ESP_FAIL;
            }
         }
-        vTaskDelay(19);
         /* Keep looping till the whole file is sent */
     } while (chunksize > 0);
 
@@ -685,14 +675,6 @@ void web_server()
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &app_js);
-
-    httpd_uri_t spinner = {
-        .uri       = "/spinner.gif",  // Match all URIs of type /path/to/file
-        .method    = HTTP_GET,
-        .handler   = spinner_handler,
-        .user_ctx  = server_data    // Pass server data as context
-    };
-    httpd_register_uri_handler(server, &spinner);
 
     /* URI handler for getting this device IP as js file to pass to websocket (workaround) */
     httpd_uri_t myip_js = {
