@@ -254,7 +254,11 @@ async function getText(filepath) {
 
 // get File and open it in the Viewer
 async function viewFile(filepath, fileExt) {
+    document.getElementById('md_fileview_status').classList.add('loader');
     let result = 'File not Supported / Error while reading';
+
+    let iframeElement = document.getElementById('data');
+    iframeElement.src = "about:blank";
 
     if (fileExt == 'tbz2') {
         console.log('tbz2 File');
@@ -265,13 +269,11 @@ async function viewFile(filepath, fileExt) {
         result = await getText(filepath);
     }
 
-    let iframeElement = document.getElementById('data');
-    iframeElement.src = "about:blank";
-
     // Set the iframe's new HTML
     iframeElement.contentWindow.document.open();
     iframeElement.contentWindow.document.write(result);
     iframeElement.contentWindow.document.close();
+    document.getElementById('md_fileview_status').classList.remove('loader');
 }
 
 // ON Window loaded
@@ -286,7 +288,7 @@ document.addEventListener('DOMContentLoaded', event => {
         document.getElementById('rcv_cr').value = init_cr;
     } catch (error) {}
 
-    let webSocket = new WebSocket('ws://' + myip + '/ws');
+    let webSocket = new WebSocket('ws://' + window.location.host + '/ws');
     webSocket.onopen = function (event) {
         document.getElementById('con_status').classList = 'tag is-light is-success';
         document.getElementById('con_status').innerText = 'Connected';
