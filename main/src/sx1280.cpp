@@ -9,6 +9,8 @@
 carousel data_carousel;				// File downloader for this stream
 portMUX_TYPE sxMux;
 extern bool sdCardPresent;
+unsigned int filepacket, filepackets;
+char filename[260] = "";
 
 // SX1280 variables
 SX128XLT LT;
@@ -102,12 +104,25 @@ extern "C" void getPacketStats(int8_t* rssi, int8_t* snr, int8_t* ssnr)
   *ssnr = 0;
 }
 
+class mycallback : public carousel::callback {
+  void fileComplete( const std::string &path ) {
+    // Serial.printf("new file path: %s\n", path.c_str());
+    strcpy(filename, path.c_str());
+  }
+	void processFile(unsigned int index, unsigned int count) {
+    // Serial.printf("file progress: %d of %d packets\n", index, count);
+    filepacket = index;
+    filepackets = count;
+  }
+};
+
 /**
  * Read packet from SX1280, when IRQ is triggered
  */
 void rxTaskSX1280(void* p)
 {
   static uint32_t mask = 0;
+  data_carousel.init("/files/tmp", new mycallback());
   while(1) {
     if (xTaskNotifyWait(0, 0, &mask, portMAX_DELAY))
     {
