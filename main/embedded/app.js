@@ -139,6 +139,10 @@ function updateStats(jsnStats) {
     document.getElementById('stats_header').innerText = jsnStats.header;
     document.getElementById('stats_pkts').innerText = jsnStats.received;
 
+    const progress = jsnStats.packet / jsnStats.packets * 100;
+    document.getElementById('stats_progress').innerText = Math.round(progress*100)/100 + '%';
+    document.getElementById('stats_file').innerText = jsnStats.filename;
+
     document.getElementById('stats_lnben').innerText = (jsnStats.ldo&0x20)>0?'YES':'NO';
     document.getElementById('stats_lnbir').innerText = (jsnStats.ldo&0x01)>0?'YES':'NO';
     document.getElementById('stats_lnbcon').innerText = (jsnStats.ldo&0x02)>0?'YES':'NO';

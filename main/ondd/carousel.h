@@ -71,8 +71,9 @@ class carousel : public virtual wpt::ref
 					kDownload,
 					kPriority,
 				} decision_t;
-				virtual decision_t filter_file( const file_t &file ) =0;
-				virtual void file_complete( const file_t &file, const std::string &path ) =0;
+				// virtual decision_t filter_file( const file_t &file ) =0;
+				virtual void fileComplete( const std::string &path ) =0;
+				virtual void processFile(unsigned int, unsigned int) =0;
 				// virtual bool validate_cert( X509 *cert ) =0;
 		};
 

@@ -301,6 +301,8 @@ static const char ws_json[] = \
 \"ldo\":\"%d\",\
 \"volt\":\"%.1f\",\
 \"bitrate\":\"%d\",\
+\"packet\":%d,\
+\"packets\":%d,\
 \"used\":\"%llu\",\
 \"max\":\"%llu\",\
 \"filepath\":\"%s\",\
@@ -312,10 +314,13 @@ static const char ws_json[] = \
 static void ws_async_send(void *arg)
 {
     extern uint32_t packetsRX;
+    extern unsigned int filepacket;
+    extern unsigned int filepackets;
     extern int detectedLNB;  // bit2 - connected, bit5 - LDO_ON, bit1 - in range
     extern float voltage;
     extern uint32_t bitrate;
     extern uint8_t CPU_USAGE;
+    extern char filename[260];
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
     uint64_t used_space = 0;
@@ -346,10 +351,12 @@ static void ws_async_send(void *arg)
         detectedLNB,
         voltage,
         bitrate,
+        filepacket + 1,
+        filepackets,
         used_space,
         max_space,
         "path",
-        "test_file"
+        filename
     );
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.payload = (uint8_t*)data;
