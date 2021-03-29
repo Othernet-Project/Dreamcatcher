@@ -155,9 +155,10 @@ function saveReceiver() {
     let bw = document.getElementById('rcv_bw').value;
     let sf = document.getElementById('rcv_sf').value;
     let cr = document.getElementById('rcv_cr').value;
+    let lnb = document.getElementById('lnb_volt').checked;
 
     const http = new XMLHttpRequest();
-    var params = 'freq=' + freq + '&bw=' + bw + '&sf=' + sf + '&cr=' + cr;
+    var params = 'freq=' + freq + '&bw=' + bw + '&sf=' + sf + '&cr=' + cr + '&lnb=' + lnb;
     console.log(params);
     var url = '/settings';
     http.open("POST", url, true);
@@ -290,6 +291,7 @@ document.addEventListener('DOMContentLoaded', event => {
         document.getElementById('rcv_bw').value = init_bw;
         document.getElementById('rcv_sf').value = init_sf;
         document.getElementById('rcv_cr').value = init_cr;
+        document.getElementById('lnb_volt').checked = init_lnb;
     } catch (error) {}
 
     let webSocket = new WebSocket('ws://' + window.location.host + '/ws');

@@ -53,6 +53,7 @@ extern const char app_css_end[]   asm("_binary_app_css_gz_end");
 #define VFS_MOUNT "/files"
 extern portMUX_TYPE sxMux;
 extern bool sdCardPresent;
+extern void enableLNB();
 
 /* Scratch buffer size */
 #define SCRATCH_BUFSIZE  20*1024
@@ -321,6 +322,7 @@ static void ws_async_send(void *arg)
     extern uint32_t bitrate;
     extern uint8_t CPU_USAGE;
     extern char filename[260];
+    extern bool bEnableLNB;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
     uint64_t used_space = 0;
@@ -434,8 +436,9 @@ static esp_err_t myipjs_handler(httpd_req_t *req)
     extern uint8_t SpreadingFactor;
     extern uint8_t CodeRate;
     extern char myIP[20];
+    extern bool bEnableLNB;
     char ipjs[200] = {0};
-    sprintf(ipjs, "myip = '%s';\nlet init_freq = %u;\n let init_bw = %d;\nlet init_sf = %d;\nlet init_cr = %d;\n", myIP, Frequency, Bandwidth, SpreadingFactor, CodeRate);
+    sprintf(ipjs, "myip = '%s';\nlet init_freq = %u;\n let init_bw = %d;\nlet init_sf = %d;\nlet init_cr = %d;\nlet init_lnb = %d;\n", myIP, Frequency, Bandwidth, SpreadingFactor, CodeRate, bEnableLNB);
     set_content_type_from_file(req, "app.js");
     httpd_resp_send_chunk(req, ipjs, strlen(ipjs));
 
@@ -494,13 +497,17 @@ static esp_err_t settings_handler(httpd_req_t *req)
     char* bw = strstr(content, "&bw=");
     char* sf = strstr(content, "sf=");
     char* cr = strstr(content, "cr=");
+    char* lnb = strstr(content, "lnb=");
     
     uint32_t _freq = strtoul( freq + 5, &bw, 0);
     int _bw = atoi(bw + 4);
     int _sf = atoi(sf + 3);
     int _cr = atoi(cr + 3);
-    ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d", _freq, _bw, _sf, _cr);
+    extern bool bEnableLNB;
+    bEnableLNB = strcmp(lnb + 4, "true") == 0;
+    ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d, lnb => %d", _freq, _bw, _sf, _cr, bEnableLNB);
     updateLoraSettings(_freq, _bw, _sf, _cr);
+    enableLNB();
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);

@@ -3,6 +3,7 @@
 #include "customize.h"
 #include "settings.h"
 #include "wifi.h"
+#include "lnb.h"
 
 Preferences prefs;
 uint8_t CPU_USAGE;
@@ -27,6 +28,7 @@ void loadSettings()
   Bandwidth = prefs.getUChar("bw", DEFAULT_BW);
   SpreadingFactor = prefs.getUChar("sf", DEFAULT_SF);
   CodeRate = prefs.getUChar("cr", DEFAULT_CR);
+  bEnableLNB = prefs.getBool("lnb", true);
 
   // wifi settings
   String ssid_ap = prefs.getString("apssid", EXAMPLE_ESP_WIFI_SSID);
@@ -70,6 +72,7 @@ void storeLoraSettings()
   prefs.putUChar("bw", Bandwidth);
   prefs.putUChar("sf", SpreadingFactor);
   prefs.putUChar("cr", CodeRate);
+  prefs.putBool("lnb", bEnableLNB);
   prefs.end();
 }
 
