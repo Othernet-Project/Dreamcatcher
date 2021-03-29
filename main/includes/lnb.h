@@ -1,4 +1,5 @@
 #pragma once
 
-void enableLNB(bool enable);
+extern bool bEnableLNB;
+extern "C" void enableLNB();
 void lnbStatus();

@@ -51,6 +51,11 @@ void loop()
   delay(10);
 }
 
+IRAM_ATTR void tpsFault()
+{
+  ets_printf("LNB fault detected");
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -66,7 +71,7 @@ void setup()
       log_e("error to init sd card and spiffs storage");
     }
   }
-  if(bWire) enableLNB(1); // enable VLNB
+  if(bWire) enableLNB(); // enable VLNB
 
   rxQueue = xQueueCreate(QUEUE_LENGTH, RXBUFFER_SIZE);
 #ifdef CONFIG_IDF_TARGET_ESP32S2

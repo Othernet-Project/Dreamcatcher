@@ -2,8 +2,9 @@
 #include "Wire.h"
 #include "lnb.h"
 #include "customize.h"
+#include "settings.h"
 
-
+bool bEnableLNB;
 float voltage = 0.0f;
 int detectedLNB = 0;
 
@@ -27,7 +28,7 @@ void lnbStatus()
     Wire.write((uint8_t)0x02);
     Wire.endTransmission();
     Wire.requestFrom(LNB_ADDRESS, 1);
-    detectedLNB = Wire.read(); // bit2 - connected, bit5 - LDO_ON, bit1 - in range
+    detectedLNB = Wire.read(); // bit1 - connected, bit5 - LDO_ON, bit0 - in range, bit3 - OCP, bit4 - termal prot
     switch ((_v & 0x1E) >> 1)
     {
       case 0x0:
@@ -80,13 +81,14 @@ void lnbStatus()
         break;
     }
     log_d("reg: %d, value: %d\n", 0x02, detectedLNB);
+    if(!detectedLNB && bEnableLNB) enableLNB();
   }
 }
 
 /**
  * Enable or disable VLNB voltage
  */
-void enableLNB(bool enable)
+extern "C" void enableLNB()
 {
   Wire.beginTransmission(LNB_ADDRESS);
   if (Wire.endTransmission() == 0) // Receive 0 = success (ACK response)
@@ -94,7 +96,7 @@ void enableLNB(bool enable)
     log_i("LNB chip detected");
     Wire.beginTransmission((uint8_t)LNB_ADDRESS);
     Wire.write((uint8_t)0x0);
-    if (enable)
+    if (bEnableLNB)
     {
       Wire.write((uint8_t)138);
     }
@@ -105,7 +107,7 @@ void enableLNB(bool enable)
     Wire.endTransmission();
     Wire.beginTransmission((uint8_t)LNB_ADDRESS);
     Wire.write((uint8_t)0x1);
-    if (enable)
+    if (bEnableLNB)
     {
       Wire.write((uint8_t)138);
     }
