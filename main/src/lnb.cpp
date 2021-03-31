@@ -7,6 +7,8 @@
 bool bEnableLNB;
 float voltage = 0.0f;
 int detectedLNB = 0;
+bool bEnableLO;
+bool bEnableDiseq;
 
 /**
  * Read LNB chip status to get voltage, or LNB being connected
@@ -109,7 +111,7 @@ extern "C" void enableLNB()
     Wire.write((uint8_t)0x1);
     if (bEnableLNB)
     {
-      Wire.write((uint8_t)138);
+      Wire.write((uint8_t)10);
     }
     else
     {
@@ -117,4 +119,25 @@ extern "C" void enableLNB()
     }
     Wire.endTransmission();
   }
+}
+
+extern "C" void enableLO(bool en)
+{
+  gpio_set_level(LO_DATA, 0);
+  vTaskDelay(50);
+  if (en)
+  {
+    gpio_set_level(LO_DATA, 1);  
+  }
+  bEnableLO = en;
+  log_i("LO: %d", bEnableLO);
+}
+
+extern "C" void enable22kHz(bool en)
+{
+  gpio_set_level(TPS_EXTM, 0);
+  vTaskDelay(100);
+  gpio_set_level(TPS_EXTM, en);
+  bEnableDiseq = en;
+  log_i("diseq: %d", bEnableDiseq);
 }
