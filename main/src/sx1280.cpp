@@ -11,6 +11,7 @@ portMUX_TYPE sxMux;
 extern bool sdCardPresent;
 unsigned int filepacket, filepackets;
 char filename[260] = "";
+AsyncUDP udp;
 
 // SX1280 variables
 SX128XLT LT;
