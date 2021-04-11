@@ -303,6 +303,7 @@ static const char ws_json[] = \
 \"cpu\":\"%d\",\
 \"ldo\":\"%d\",\
 \"volt\":\"%.1f\",\
+\"offset\":\"%d\",\
 \"bitrate\":\"%d\",\
 \"packet\":%d,\
 \"packets\":%d,\
@@ -324,6 +325,7 @@ static void ws_async_send(void *arg)
     extern uint32_t bitrate;
     extern uint8_t CPU_USAGE;
     extern char filename[260];
+    extern uint16_t offset;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
     uint64_t used_space = 0;
@@ -353,6 +355,7 @@ static void ws_async_send(void *arg)
         CPU_USAGE,
         detectedLNB,
         voltage,
+        offset,
         bitrate,
         filepacket + 1,
         filepackets,
