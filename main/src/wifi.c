@@ -81,6 +81,7 @@ void initWifi(const char* ssid_ap, const char* pass_ap)
     ESP_ERROR_CHECK(esp_wifi_start() );
     // wifi_init_sta(EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS, WIFI_MODE_STA);
     wifi_init_softap(ssid_ap, pass_ap, WIFI_AUTH_WPA2_PSK);
+    esp_wifi_set_ps(WIFI_PS_NONE);
 }
 
 void wifi_init_softap(char* ssid, char* pass, uint8_t auth)

@@ -14,6 +14,7 @@
 #pragma once 
 #include <SX128XLT.h>                                          //include the appropriate library  
 #include "customize.h"
+#include "AsyncUDP.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,7 @@ extern int8_t TXpower;                      //LoRa transmit power in dBm
 
 #define RXBUFFER_SIZE 255                        //RX buffer size  (MAX 255)
 
+extern AsyncUDP udp;
 
 void readMBR();
 esp_err_t initSDcard();

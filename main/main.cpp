@@ -80,6 +80,13 @@ void setup()
   xTaskCreatePinnedToCore(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle, 1); // stack size may be increased to receive bigger files
 #endif
 
+  gpio_set_direction(LO_DATA, GPIO_MODE_OUTPUT);
+  gpio_set_direction(TPS_EXTM, GPIO_MODE_OUTPUT);
+
+  gpio_set_direction(GPIO_NUM_1, GPIO_MODE_INPUT);
+  gpio_set_pull_mode(GPIO_NUM_1, GPIO_PULLUP_ONLY);
+  attachInterrupt(1, tpsFault, FALLING);
+
   web_server();
 
   initSX1280();

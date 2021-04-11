@@ -11,6 +11,7 @@ portMUX_TYPE sxMux;
 extern bool sdCardPresent;
 unsigned int filepacket, filepackets;
 char filename[260] = "";
+AsyncUDP udp;
 
 // SX1280 variables
 SX128XLT LT;
@@ -152,6 +153,8 @@ void rxTaskSX1280(void* p)
           } else {
             data_carousel.consume(data, RXPacketL);
           }
+          data[0] = RXPacketL;
+          udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
         }
       }
 
