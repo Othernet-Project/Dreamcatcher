@@ -31,7 +31,7 @@ extern unsigned long resetStart;
 
 //LoRa Modem Parameters
 extern uint32_t Frequency;           //frequency of transmissions
-extern int32_t Offset;                        //offset frequency for calibration purposes  
+extern int32_t _Offset;                        //offset frequency for calibration purposes  
 extern uint8_t Bandwidth;          //LoRa bandwidth
 extern uint8_t SpreadingFactor;        //LoRa spreading factor
 extern uint8_t CodeRate;            //LoRa coding rate

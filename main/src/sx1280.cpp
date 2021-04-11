@@ -12,11 +12,12 @@ extern bool sdCardPresent;
 unsigned int filepacket, filepackets;
 char filename[260] = "";
 AsyncUDP udp;
+int32_t offset;
 
 // SX1280 variables
 SX128XLT LT;
 uint32_t Frequency;
-int32_t Offset = 0;                        //offset frequency for calibration purposes  
+int32_t _Offset = 0;                        //offset frequency for calibration purposes  
 uint8_t Bandwidth;          //LoRa bandwidth
 uint8_t SpreadingFactor;        //LoRa spreading factor
 uint8_t CodeRate;            //LoRa coding rate
@@ -132,10 +133,16 @@ void rxTaskSX1280(void* p)
       if(IRQStatus & IRQ_RX_DONE) {
         PacketRSSI = LT.readPacketRSSI();              //read the recived RSSI value
         PacketSNR = LT.readPacketSNR();                //read the received SNR value
+        offset = LT.getFrequencyErrorRegValue();
 
         uint8_t data[256];
 
         RXPacketL = readbufferSX1280(data, RXBUFFER_SIZE);
+        if (offset > 20000)
+        {
+          LT.setRfFrequency(Frequency, offset);
+        }
+        
         LT.setRx(0);
 
         packetsRX++;
@@ -187,7 +194,7 @@ void initSX1280()
     LT.setMode(MODE_STDBY_RC);
     LT.setRegulatorMode(USE_LDO);
     LT.setPacketType(PACKET_TYPE_LORA);
-    LT.setRfFrequency(Frequency, Offset);
+    LT.setRfFrequency(Frequency, _Offset);
     LT.setBufferBaseAddress(0, 0);
     LT.setModulationParams(SpreadingFactor, Bandwidth, CodeRate);
     LT.setPacketParams(0x23, LORA_PACKET_VARIABLE_LENGTH, 255, LORA_CRC_ON, LORA_IQ_NORMAL, 0, 0);
@@ -227,7 +234,7 @@ extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_
   SpreadingFactor = sf;
   Bandwidth = bw;
   CodeRate = cr;
-  LT.setRfFrequency(Frequency, Offset);
+  LT.setRfFrequency(Frequency, _Offset);
   LT.setModulationParams(SpreadingFactor, Bandwidth, CodeRate);
   LT.setRx(0);
   storeLoraSettings();

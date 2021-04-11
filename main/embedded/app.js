@@ -147,6 +147,7 @@ function updateStats(jsnStats) {
     document.getElementById('stats_lnbir').innerText = (jsnStats.ldo&0x01)>0?'YES':'NO';
     document.getElementById('stats_lnbcon').innerText = (jsnStats.ldo&0x02)>0?'YES':'NO';
     document.getElementById('stats_lnbv').innerText = jsnStats.volt;
+    document.getElementById('stats_offset').innerText = jsnStats.offset;    
 }
 
 // save Reeiver Settings
