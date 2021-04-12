@@ -159,9 +159,10 @@ function saveReceiver() {
     let lnb = document.getElementById('lnb_volt').checked;
     let lo = document.getElementById('lo_en').checked;
     let diseq = document.getElementById('diseq').checked;
+    let loid = document.getElementById('rcv_loid').value;
 
     const http = new XMLHttpRequest();
-    var params = 'freq=' + freq + '&bw=' + bw + '&sf=' + sf + '&cr=' + cr + '&lnb=' + lnb + '&lo=' + lo + '&diseq=' + diseq;
+    var params = 'freq=' + freq + '&bw=' + bw + '&sf=' + sf + '&cr=' + cr + '&lnb=' + lnb + '&lo=' + lo + '&diseq=' + diseq + '&loid=' + loid;
     console.log(params);
     var url = '/settings';
     http.open("POST", url, true);
@@ -297,6 +298,7 @@ document.addEventListener('DOMContentLoaded', event => {
         document.getElementById('lnb_volt').checked = init_lnb;
         document.getElementById('lo_en').checked = init_lo;
         document.getElementById('diseq').checked = init_diseq;
+        document.getElementById('rcv_loid').value = init_loid;
     } catch (error) {}
 
     let webSocket = new WebSocket('ws://' + window.location.host + '/ws');

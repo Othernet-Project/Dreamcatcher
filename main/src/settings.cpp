@@ -29,6 +29,9 @@ void loadSettings()
   SpreadingFactor = prefs.getUChar("sf", DEFAULT_SF);
   CodeRate = prefs.getUChar("cr", DEFAULT_CR);
   bEnableLNB = prefs.getBool("lnb", true);
+  uLOid = prefs.getUChar("loid", 0);
+  bEnableLO = prefs.getBool("lo", false);
+  bEnableDiseq = prefs.getBool("diseq", false);
 
   // wifi settings
   String ssid_ap = prefs.getString("apssid", EXAMPLE_ESP_WIFI_SSID);
@@ -73,6 +76,9 @@ void storeLoraSettings()
   prefs.putUChar("sf", SpreadingFactor);
   prefs.putUChar("cr", CodeRate);
   prefs.putBool("lnb", bEnableLNB);
+  prefs.putBool("lo", bEnableLO);
+  prefs.putUChar("loid", uLOid);
+  prefs.putUChar("diseq", bEnableDiseq);
   prefs.end();
 }
 
