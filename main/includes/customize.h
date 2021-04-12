@@ -2,7 +2,7 @@
 #include "sdkconfig.h"
 
 #define HW_VERSION "2021.04"
-#define FW_VERSION "1.2.0-rc"
+#define FW_VERSION "1.3.0-rc"
 
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet DC4"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
@@ -34,6 +34,7 @@
 #define I2C_SCL 17
 
 #define LO_DATA (gpio_num_t)18
+#define LO_CLK 41
 #define TPS_EXTM (gpio_num_t)35
 #else
 

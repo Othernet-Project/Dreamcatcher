@@ -3,6 +3,11 @@
 #include "lnb.h"
 #include "customize.h"
 #include "settings.h"
+#include "HopeDuino_CMT211xA.h"
+#include "lo.h"
+
+cmt211xaClass radio;
+uint8_t uLOid;
 
 bool bEnableLNB;
 float voltage = 0.0f;
@@ -121,8 +126,15 @@ extern "C" void enableLNB()
   }
 }
 
-extern "C" void enableLO(bool en)
+extern "C" void enableLO(bool en, uint8_t id)
 {
+  pinMode(LO_CLK, OUTPUT);
+
+  radio.Chipset        = CMT2119A;
+  radio.SymbolTime     = 416;
+  radio.vCMT2119AInit(CfgTbl[id], 21);
+
+  vTaskDelay(50);
   gpio_set_level(LO_DATA, 0);
   vTaskDelay(50);
   if (en)

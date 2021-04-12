@@ -9,6 +9,8 @@ set(SRCS
     src/sx1280.cpp
     src/lnb.cpp
     src/settings.cpp
+    src/HopeDuino_CMT211xA.cpp
+    src/HopeDuino_TWI.cpp
 )
 idf_component_register(SRCS ${SRCS} 
                         INCLUDE_DIRS "includes" "ondd" 

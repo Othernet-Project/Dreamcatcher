@@ -55,7 +55,7 @@ extern portMUX_TYPE sxMux;
 extern bool sdCardPresent;
 extern void enableLNB();
 extern void enable22kHz(bool en);
-extern void enableLO(bool en);
+extern void enableLO(bool en, uint8_t id);
 
 /* Scratch buffer size */
 #define SCRATCH_BUFSIZE  20*1024
@@ -103,7 +103,8 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
     struct stat entry_stat;
     char _dirpath[255] = {0};
     const size_t dirpath_len = strlen(dirpath);
-    strncpy(_dirpath, dirpath, dirpath_len - 1);
+    strncpy(_dirpath, dirpath, 255);
+    _dirpath[dirpath_len - 1] = 0x0;
     int len = httpd_req_get_url_query_len(req);
     int queryindex = 0;
     char buf[20] = {0};
@@ -439,14 +440,15 @@ static esp_err_t myipjs_handler(httpd_req_t *req)
     extern uint8_t Bandwidth;
     extern uint8_t SpreadingFactor;
     extern uint8_t CodeRate;
+    extern uint8_t uLOid;
     extern char myIP[20];
     extern bool bEnableLNB;
     extern bool bEnableLO;
     extern bool bEnableDiseq;
     char ipjs[200] = {0};
     sprintf(ipjs, "myip = '%s';\nlet init_freq = %u;\n let init_bw = %d;\nlet init_sf = %d;\nlet init_cr = %d; \
-                \nlet init_lnb = %d;\nlet init_lo = %d;\nlet init_diseq = %d;", 
-                myIP, Frequency, Bandwidth, SpreadingFactor, CodeRate, bEnableLNB, bEnableLO, bEnableDiseq);
+                \nlet init_lnb = %d;\nlet init_lo = %d;\nlet init_diseq = %d;\nlet init_loid = %d;", 
+                myIP, Frequency, Bandwidth, SpreadingFactor, CodeRate, bEnableLNB, bEnableLO, bEnableDiseq, uLOid);
     set_content_type_from_file(req, "app.js");
     httpd_resp_send_chunk(req, ipjs, strlen(ipjs));
 
@@ -500,6 +502,7 @@ static esp_err_t settings_handler(httpd_req_t *req)
         }
         return ESP_FAIL;
     }
+    extern uint8_t uLOid;
 
     char* freq = strstr(content, "freq=");
     char* bw = strstr(content, "&bw=");
@@ -508,7 +511,9 @@ static esp_err_t settings_handler(httpd_req_t *req)
     char* lnb = strstr(content, "lnb=");
     char* lo = strstr(content, "lo=");
     char* diseq = strstr(content, "diseq=");
-    
+    char* loid = strstr(content, "loid=");
+    uLOid = atoi(loid + 5);
+
     uint32_t _freq = strtoul( freq + 5, &bw, 0);
     int _bw = atoi(bw + 4);
     int _sf = atoi(sf + 3);
@@ -518,10 +523,10 @@ static esp_err_t settings_handler(httpd_req_t *req)
     bool bDiseq = strncmp(diseq + 6, "true", 4) == 0;
     bEnableLNB = strncmp(lnb + 4, "true", 4) == 0;
     ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d, lnb => %d", _freq, _bw, _sf, _cr, bEnableLNB);
-    updateLoraSettings(_freq, _bw, _sf, _cr);
     enableLNB();
     enable22kHz(bDiseq);
-    enableLO(bLO);
+    enableLO(bLO, uLOid);
+    updateLoraSettings(_freq, _bw, _sf, _cr);
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);

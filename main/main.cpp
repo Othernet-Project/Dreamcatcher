@@ -90,5 +90,11 @@ void setup()
   web_server();
 
   initSX1280();
+
+
+  vTaskDelay(50);
+  gpio_set_level(LO_DATA, 0);
+  vTaskDelay(50);
+  gpio_set_level(LO_DATA, 1);
 }
 

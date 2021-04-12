@@ -138,11 +138,7 @@ void rxTaskSX1280(void* p)
         uint8_t data[256];
 
         RXPacketL = readbufferSX1280(data, RXBUFFER_SIZE);
-        if (offset > 20000)
-        {
-          LT.setRfFrequency(Frequency, offset);
-        }
-        
+
         LT.setRx(0);
 
         packetsRX++;
