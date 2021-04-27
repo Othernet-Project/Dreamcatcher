@@ -579,7 +579,7 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "query string len: %d => %s", len, content);
     ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d", _ssid, _pass, type?"AP":"STA", _auth);
 
-    if (ssid_len && pass_len)
+    if (ssid_len && (!pass_len || ( 8 <= pass_len && pass_len <= 32 )))
     {
         if (type) 
         {
