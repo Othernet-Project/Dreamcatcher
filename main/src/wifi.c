@@ -115,6 +115,7 @@ void wifi_init_sta(char* ssid, char* pass)
     strcpy((char*)wifi_config.sta.password, pass);
 
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    esp_wifi_disconnect(); // if we're trying to connect with wrong credentials, don't bomb.
     ESP_ERROR_CHECK( esp_wifi_connect() );
 
     ESP_LOGI(TAG, "wifi_init_sta finished. SSID:%s password:%s",
