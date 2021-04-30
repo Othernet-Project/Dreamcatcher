@@ -23,7 +23,6 @@ jsI18n.addLocale("fr",{
 "l-lo" : "Fréquence oscillateur (MHz)",
 "l-loeng" : "Activation de l'oscillateur",
 "l-diseq" : "Activer diseq (22kHz)",
-"l-fres" : "Réinitialisation d'usine",
 "f-title" : "Visionneuse de fichiers",
 "f-nodata" : "Pas encore de données...",
 "l-close" : "Fermer",

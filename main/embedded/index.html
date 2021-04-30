@@ -15,21 +15,22 @@
             <a class="navbar-item" href="/">
                 <p class="is-size-4 has-text-weight-semibold">OTHERNET</p>
             </a>
-
+        
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbar" onclick="toggleActive('navbar')">
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
             </div>
-
+        
             <div id="navbar" class="navbar-menu">
             <div class="navbar-start">
                 <a onclick="toggleTab('','','.tabs_main','main_dash')" class="navbar-item" data-trans="m-dash">Dashboard</a>
                 <a onclick="toggleTab('','','.tabs_main','main_files')"class="navbar-item" data-trans="m-file">Files</a>
-
+      
                 <div class="navbar-item has-dropdown is-hoverable">
                     <p class="navbar-link" data-trans="m-set">Settings</p>
+            
                     <div class="navbar-dropdown">
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item" data-trans="s-ap">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item" data-trans="s-cl">Wifi Client</a>
@@ -44,9 +45,7 @@
                        <a onclick="changeLocale('fr')"class="navbar-item">français</a>
                        <a onclick="changeLocale('de')"class="navbar-item">Deutsch</a>
                    </div>
-               </div>
-            </div>
-
+        
             <div class="navbar-end">
                 <div class="navbar-item">
                 <div class="tags are-medium">
@@ -69,7 +68,7 @@
                             <input id="ap_ssid" class="input" type="text" placeholder="Othernet DC4">
                         </div>
                     </div>
-
+                    
                     <div class="field">
                         <label class="label" data-trans="l-pass">Password</label>
                         <div class="control">
@@ -94,7 +93,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="field is-grouped pt-4">
                         <div class="control">
                             <button onclick="saveWifiAp()" class="button is-link" data-trans="l-save">Save</button>
@@ -118,14 +117,14 @@
                             <input id="sta_ssid" class="input" type="text" placeholder="myWifi">
                         </div>
                     </div>
-
+                    
                     <div class="field">
                         <label class="label" data-trans="l-pass">Password</label>
                         <div class="control">
                             <input id="sta_pwd" class="input" type="password" placeholder="*********">
                         </div>
                     </div>
-
+                    
                     <div class="field is-grouped pt-4">
                         <div class="control">
                             <button onclick="saveWifiClient()" class="button is-link" data-trans="l-save">Save</button>
@@ -225,7 +224,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="field">
                         <label class="label" data-trans="l-loeng">Enable LO</label>
                         <div class="control">
@@ -239,19 +238,13 @@
                             <input id="diseq" class="checkbox" type="checkbox">
                         </div>
                     </div>
-
+                    
                     <div class="field is-grouped pt-4">
                         <div class="control">
                             <button onclick="saveReceiver()" class="button is-link" data-trans="l-save">Save</button>
                         </div>
                         <div class="control">
                             <button onclick="toggleModal('md_receiver')" class="button is-dark" data-trans="l-cancel">Cancel</button>
-                        </div>
-                        <div class="control is-pulled-right">
-                            <button onclick="factoryReset()" id="btn_freset" class="button is-danger" data-trans="l-fres">Factory Reset</button>
-                        </div>
-                        <div class="control is-pulled-right">
-                            <button onclick="factoryReset()" id="btn_freset" class="button is-danger">Factory Reset</button>
                         </div>
                     </div>
                 </div>

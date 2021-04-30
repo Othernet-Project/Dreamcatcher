@@ -84,13 +84,8 @@ void storeLoraSettings()
 
 void setDefaults()
 {
-  prefs.begin("lora", false);
-  prefs.clear(); // clear settings space
-  prefs.end();
-  storeWifiCredsAP(EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS); // set defaults
+  storeWifiCredsAP(EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
   updateLoraSettings(DEFAULT_FREQUENCY, DEFAULT_BW, DEFAULT_SF, DEFAULT_CR);
-  vTaskDelay(1000);
-  esp_restart(); // restart device
 }
 
 //-------------------------------------------------//

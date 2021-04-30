@@ -485,19 +485,6 @@ static esp_err_t format_card_handler(httpd_req_t *req)
 }
 
 /**
- * Function to factory reset device
- */
-esp_err_t setDefaults();
-static esp_err_t factory_reset_handler(httpd_req_t *req)
-{
-    vTaskDelay(1000);
-    setDefaults();
-    /* Respond with an empty chunk to signal HTTP response completion */
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
-
-/**
  * Set lora settings
  */
 static esp_err_t settings_handler(httpd_req_t *req)
@@ -579,9 +566,7 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "query string len: %d => %s", len, content);
     ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d", _ssid, _pass, type?"AP":"STA", _auth);
 
-    if (ssid_len && (!pass_len || ( 8 <= pass_len && pass_len <= 32 )))
-    {
-        if (type) 
+    if (type)
         {
             wifi_init_softap(_ssid, _pass, _auth);
             storeWifiCredsAP(_ssid, _pass);
@@ -589,7 +574,6 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
             wifi_init_sta(_ssid, _pass);
             storeWifiCredsSTA(_ssid, _pass);
         }
-    }
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
@@ -762,7 +746,7 @@ void web_server()
     httpd_register_uri_handler(server, &files_tree);
 
     httpd_uri_t wifi = {
-        .uri       = "/wifi",
+        .uri       = "/wifi",  // Match all URIs of type /path/to/file
         .method    = HTTP_POST,
         .handler   = wifi_credentials_handler,
         .user_ctx  = server_data    // Pass server data as context
@@ -770,23 +754,15 @@ void web_server()
     httpd_register_uri_handler(server, &wifi);
 
     httpd_uri_t format = {
-        .uri       = "/format",
+        .uri       = "/format",  // Match all URIs of type /path/to/file
         .method    = HTTP_POST,
         .handler   = format_card_handler,
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &format);
-    
-        httpd_uri_t freset = {
-        .uri       = "/freset",
-        .method    = HTTP_POST,
-        .handler   = factory_reset_handler,
-        .user_ctx  = server_data    // Pass server data as context
-    };
-    httpd_register_uri_handler(server, &freset);
 
     httpd_uri_t settings = {
-        .uri       = "/settings",
+        .uri       = "/settings",  // Match all URIs of type /path/to/file
         .method    = HTTP_POST,
         .handler   = settings_handler,
         .user_ctx  = server_data    // Pass server data as context
