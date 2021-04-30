@@ -8,7 +8,7 @@
         <script src="app.js"></script>
         <script src="myip.js"></script>
     </head>
-    <body>
+    <body onload="jsI18n.processPage()">
 
         <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
@@ -25,19 +25,26 @@
         
             <div id="navbar" class="navbar-menu">
             <div class="navbar-start">
-                <a onclick="toggleTab('','','.tabs_main','main_dash')" class="navbar-item">Dashboard</a>
-                <a onclick="toggleTab('','','.tabs_main','main_files')"class="navbar-item">Files</a>
-        
+                <a onclick="toggleTab('','','.tabs_main','main_dash')" class="navbar-item" data-trans="m-dash">Dashboard</a>
+                <a onclick="toggleTab('','','.tabs_main','main_files')"class="navbar-item" data-trans="m-file">Files</a>
+      
                 <div class="navbar-item has-dropdown is-hoverable">
-                    <p class="navbar-link">Settings</p>
+                    <p class="navbar-link" data-trans="m-set">Settings</p>
             
                     <div class="navbar-dropdown">
-                        <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
-                        <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
-                        <a onclick="toggleModal('md_receiver')"class="navbar-item">Receiver</a>
+                        <a onclick="toggleModal('md_wifiap')" class="navbar-item" data-trans="s-ap">Wifi AP</a>
+                        <a onclick="toggleModal('md_wificlient')"class="navbar-item" data-trans="s-cl">Wifi Client</a>
+                        <a onclick="toggleModal('md_receiver')"class="navbar-item" data-trans="s-rec">Receiver</a>
                     </div>
                 </div>
-            </div>
+
+                <div class="navbar-item has-dropdown is-hoverable">
+                   <p class="navbar-link" data-trans="m-lang">Language</p>
+                   <div class="navbar-dropdown">
+                       <a onclick="changeLocale('en')" class="navbar-item">English</a>
+                       <a onclick="changeLocale('fr')"class="navbar-item">français</a>
+                       <a onclick="changeLocale('de')"class="navbar-item">Deutsch</a>
+                   </div>
         
             <div class="navbar-end">
                 <div class="navbar-item">
@@ -54,23 +61,23 @@
             <div class="modal-background"></div>
             <div class="modal-content">
                 <div class="box">
-                    <h3 class="subtitle">Wifi Access Point<span id="tag_saveAp" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    <h3 class="subtitle"><span data-trans="l-wap">Wifi Access Point</span><span id="tag_saveAp" class="tag is-success is-pulled-right is-hidden" data-trans="l-saved">Settings Saved</span></h3>
                     <div class="field">
-                        <label class="label">SSID / Name</label>
+                        <label class="label" data-trans="l-ssid">SSID / Name</label>
                         <div class="control">
                             <input id="ap_ssid" class="input" type="text" placeholder="Othernet DC4">
                         </div>
                     </div>
                     
                     <div class="field">
-                        <label class="label">Password</label>
+                        <label class="label" data-trans="l-pass">Password</label>
                         <div class="control">
                             <input id="ap_pwd" class="input" type="password" placeholder="*********">
                         </div>
                     </div>
 
                     <div class="field">
-                        <label class="label">Authentication</label>
+                        <label class="label" data-trans="l-auth">Authentication</label>
                         <div class="control">
                             <div class="select">
                                 <select id="ap_auth">
@@ -89,10 +96,10 @@
                     
                     <div class="field is-grouped pt-4">
                         <div class="control">
-                            <button onclick="saveWifiAp()" class="button is-link">Save</button>
+                            <button onclick="saveWifiAp()" class="button is-link" data-trans="l-save">Save</button>
                         </div>
                         <div class="control">
-                            <button onclick="toggleModal('md_wifiap')" class="button is-dark">Close</button>
+                            <button onclick="toggleModal('md_wifiap')" class="button is-dark" data-trans="l-cancel">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -103,16 +110,16 @@
             <div class="modal-background"></div>
             <div class="modal-content">
                 <div class="box">
-                    <h3 class="subtitle">Wifi Client<span id="tag_saveSta" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    <h3 class="subtitle"><span data-trans="l-wcl">Wifi Client</span><span id="tag_saveSta" class="tag is-success is-pulled-right is-hidden" data-trans="l-saved">Settings Saved</span></h3>
                     <div class="field">
-                        <label class="label">SSID / Name</label>
+                        <label class="label" data-trans="l-ssid">SSID / Name</label>
                         <div class="control">
                             <input id="sta_ssid" class="input" type="text" placeholder="myWifi">
                         </div>
                     </div>
                     
                     <div class="field">
-                        <label class="label">Password</label>
+                        <label class="label" data-trans="l-pass">Password</label>
                         <div class="control">
                             <input id="sta_pwd" class="input" type="password" placeholder="*********">
                         </div>
@@ -120,10 +127,10 @@
                     
                     <div class="field is-grouped pt-4">
                         <div class="control">
-                            <button onclick="saveWifiClient()" class="button is-link">Save</button>
+                            <button onclick="saveWifiClient()" class="button is-link" data-trans="l-save">Save</button>
                         </div>
                         <div class="control">
-                            <button onclick="toggleModal('md_wificlient')" class="button is-dark">Cancel</button>
+                            <button onclick="toggleModal('md_wificlient')" class="button is-dark" data-trans="l-cancel">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -134,16 +141,16 @@
             <div class="modal-background"></div>
             <div class="modal-content">
                 <div class="box">
-                    <h3 class="subtitle">Receiver Setup<span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    <h3 class="subtitle"><span data-trans="l-setup">Receiver Setup</span><span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden" data-trans="l-saved">Settings Saved</span></h3>
                     <div class="field">
-                        <label class="label">Frequency (Hz)</label>
+                        <label class="label" data-trans="l-frew">Frequency (Hz)</label>
                         <div class="control">
                             <input id="rcv_freq" class="input" type="text" placeholder="2400000000">
                         </div>
                     </div>
 
                     <div class="field">
-                        <label class="label">Bandwidth</label>
+                        <label class="label" data-trans="l-bw">Bandwidth</label>
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_bw">
@@ -157,7 +164,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Spreading factor</label>
+                        <label class="label" data-trans="l-sf">Spreading factor</label>
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_sf">
@@ -175,7 +182,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Coding rate</label>
+                        <label class="label" data-trans="l-cr">Coding rate</label>
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_cr">
@@ -189,14 +196,14 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">LNB voltage</label>
+                        <label class="label" data-trans="l-lnb">LNB voltage</label>
                         <div class="control">
                             <input id="lnb_volt" class="checkbox" type="checkbox">
                         </div>
                     </div>
 
                     <div class="field">
-                        <label class="label">LO frequency (MHz)</label>
+                        <label class="label" data-trans="l-lo">LO frequency (MHz)</label>
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_loid">
@@ -219,14 +226,14 @@
                     </div>
                     
                     <div class="field">
-                        <label class="label">Enable LO</label>
+                        <label class="label" data-trans="l-loeng">Enable LO</label>
                         <div class="control">
                             <input id="lo_en" class="checkbox" type="checkbox">
                         </div>
                     </div>
 
                     <div class="field">
-                        <label class="label">Enable diseq (22kHz)</label>
+                        <label class="label" data-trans="l-diseq">Enable diseq (22kHz)</label>
                         <div class="control">
                             <input id="diseq" class="checkbox" type="checkbox">
                         </div>
@@ -234,10 +241,10 @@
                     
                     <div class="field is-grouped pt-4">
                         <div class="control">
-                            <button onclick="saveReceiver()" class="button is-link">Save</button>
+                            <button onclick="saveReceiver()" class="button is-link" data-trans="l-save">Save</button>
                         </div>
                         <div class="control">
-                            <button onclick="toggleModal('md_receiver')" class="button is-dark">Cancel</button>
+                            <button onclick="toggleModal('md_receiver')" class="button is-dark" data-trans="l-cancel">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -248,11 +255,11 @@
             <div class="modal-background"></div>
             <div class="modal-content is-fullwidth">
                 <div class="box">
-                    <h3 class="subtitle">File Viewer<span id="md_fileview_status" class="is-pulled-right"></span></h3>
-                        <iframe id="data">No data Yet...</iframe>                    
+                    <h3 class="subtitle"><span data-trans="f-title">File Viewer</span><span id="md_fileview_status" class="is-pulled-right"></span></h3>
+                        <iframe id="data" data-trans="f-nodata">No data Yet...</iframe>                    
                     <div class="field is-grouped pt-4">
                         <div class="control">
-                            <button onclick="toggleModal('md_fileview')" class="button is-dark">Close</button>
+                            <button onclick="toggleModal('md_fileview')" class="button is-dark" data-trans="l-close">Close</button>
                         </div>
                     </div>
                 </div>
@@ -265,8 +272,8 @@
         <section class="hero is-primary is-bold">
             <div class="hero-body">
                 <div class="container">
-                    <h1 class="title">Welcome to Othernet</h1>
-                    <p class="subtitle">A BROADCAST FOR THE DIGITAL AGE</p>
+                    <h1 class="title" data-trans="d-welcome">Welcome to Othernet</h1>
+                    <p class="subtitle" data-trans="d-sub">A BROADCAST FOR THE DIGITAL AGE</p>
                 </div>
             </div>
         </section>
@@ -276,31 +283,31 @@
                 <div class="columns is-multiline">
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Device Information</h3>
-                            <p>Hardware Version: <span id="stats_hw" class="is-pulled-right">-</span></p>
-                            <p>Firmware Version: <span id="stats_fw" class="is-pulled-right">-</span></p>
-                            <p>IP Address: <span id="info_ip" class="is-pulled-right">-</span></p>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-1">Device Information</h3>
+                            <p><span data-trans="d-1-1">Hardware Version</span>: <span id="stats_hw" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-1-2">Firmware Version</span>: <span id="stats_fw" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-1-3">IP Address</span>: <span id="info_ip" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Memory Status</h3>
-                            <p>Free Heap <span id="stats_heap" class="is-pulled-right">-</span></p>
-                            <p>Min Free heap <span id="stats_minheap" class="is-pulled-right">-</span></p>
-                            <p>Free SPIram <span id="stats_psram" class="is-pulled-right">-</span></p>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-2">Memory Status</h3>
+                            <p><span data-trans="d-2-1">Free Heap</span> <span id="stats_heap" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-2-2">Min Free heap</span> <span id="stats_minheap" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-2-3">Free SPIram</span> <span id="stats_psram" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">SD Card Status</h3>
-                            <p>Capacity <span id="stats_sdcap" class="is-pulled-right">-</span></p>
-                            <p>Free <span id="stats_sdfree" class="is-pulled-right">-</span></p>
-                            <p>Used <span id="stats_sdused" class="is-pulled-right">-</span></p>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-3">SD Card Status</h3>
+                            <p><span data-trans="d-3-1">Capacity</span> <span id="stats_sdcap" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-3-2">Free</span> <span id="stats_sdfree" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-3-3">Used</span> <span id="stats_sdused" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">CPU Load</h3>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-4">CPU Load</h3>
                             <p class="is-size-2"><span id="stats_cpu">-</span>%</p>
                             <progress id="stats_cpubar" class="progress is-primary" value="0" max="100"></progress>
                         </div>
@@ -308,38 +315,38 @@
 
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">LNB Status</h3>
-                            <p>LNB enabled <span id="stats_lnben" class="is-pulled-right">-</span></p>
-                            <p>LNB in range <span id="stats_lnbir" class="is-pulled-right">-</span></p>
-                            <p>LNB connected <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
-                            <p>LNB voltage <span id="stats_lnbv" class="is-pulled-right">-</span></p>
-                            <p>FREQ offset <span id="stats_offset" class="is-pulled-right">-</span></p>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-5">LNB Status</h3>
+                            <p><span data-trans="d-5-1">LNB enabled</span> <span id="stats_lnben" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-5-2">LNB in range</span> <span id="stats_lnbir" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-5-3">LNB connected</span> <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-5-4">LNB voltage</span> <span id="stats_lnbv" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-5-5">FREQ offset</span> <span id="stats_offset" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-6">Receiver Status</h3>
                             <p id="stats_snr" class="is-size-2">-</p>
                             <small class="has-text-weight-bold has-text-grey">SNR</small>
                         </div>
                     </div>
                     <div class="column is-3">
                         <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Stats</h3>
-                            <p>RSSI<span id="stats_rssi" class="is-pulled-right">-</span></p>
-                            <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
-                            <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
-                            <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-7">Receiver Stats</h3>
+                            <p><span data-trans="d-7-1">RSSI</span> <span id="stats_rssi" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-7-2">Packets Received</span> <span id="stats_pkts" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-7-3">CRC Errors</span> <span id="stats_crc" class="is-pulled-right">-</span></p>
+                            <p><span data-trans="d-7-4">Header Errors</span> <span id="stats_header" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                   <div class="column is-3">
                     <div class="notification">
-                        <h3 class="subtitle has-text-grey has-text-weight-semibold">File info</h3>
-                        <p>Name<span id="stats_file" class="is-pulled-right">-</span></p>
-                        <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                        <h3 class="subtitle has-text-grey has-text-weight-semibold" data-trans="d-8">File info</h3>
+                        <p><span data-trans="d-8-1">Name</span> <span id="stats_file" class="is-pulled-right">-</span></p>
+                        <p><span data-trans="d-8-2">Progress</span> <span id="stats_progress" class="is-pulled-right">-</span></p>
                     </div>
                 </div>
-              
+
                 </div>
             </div>
         </section>
@@ -349,12 +356,8 @@
             <section class="hero is-primary is-bold"> 
                 <div class="hero-body">
                     <div class="container">
-                        <h1 class="title">
-                            File Browser
-                        </h1>
-                        <p class="subtitle">
-                            Browse All files you Downloaded from the Sky
-                        </p>
+                        <h1 class="title" data-trans="fb-title">File Browser</h1>
+                        <p class="subtitle" data-trans="fb-sub">Browse All files you Downloaded from the Sky</p>
                     </div>
                 </div>
             </section>
@@ -362,7 +365,7 @@
             <section class="section">
                 <div class="container">
                     <div class="buttons">
-                        <button onclick="formatSd()" id="btn_formatsd" class="button is-danger">Format SD Card</button>
+                        <button onclick="formatSd()" id="btn_formatsd" class="button is-danger" data-trans="fb-format">Format SD Card</button>
                         <span id="md_filetree_status" class="is-pulled-right"></span>
                     </div>                    
                     <div id="filestree" class="columns is-multiline"></div>
@@ -374,7 +377,7 @@
         <footer class="footer">
             <div class="container">
                 <div class="content has-text-centered">
-                    <p><strong><a href="https://othernet.is">Othernet.is</a> Dreamcatcher 4</strong> - Contribute on Github: <a href="https://github.com/Othernet-Project/Dreamcatcher">DC4 Firmware</a></p>
+                    <p><strong><a href="https://othernet.is">Othernet.is</a> Dreamcatcher 4</strong> - <span data-trans="footer">Contribute on Github</span>: <a href="https://github.com/Othernet-Project/Dreamcatcher">DC4 Firmware</a></p>
                 </div>
             </div>
         </footer>
