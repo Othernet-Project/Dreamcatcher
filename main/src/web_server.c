@@ -567,13 +567,13 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d", _ssid, _pass, type?"AP":"STA", _auth);
 
     if (type)
-        {
-            wifi_init_softap(_ssid, _pass, _auth);
-            storeWifiCredsAP(_ssid, _pass);
-        } else {
-            wifi_init_sta(_ssid, _pass);
-            storeWifiCredsSTA(_ssid, _pass);
-        }
+    {
+        wifi_init_softap(_ssid, _pass, _auth);
+        storeWifiCredsAP(_ssid, _pass);
+    } else {
+        wifi_init_sta(_ssid, _pass);
+        storeWifiCredsSTA(_ssid, _pass);
+    }
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
