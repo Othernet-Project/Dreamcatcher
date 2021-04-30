@@ -224,7 +224,7 @@ function saveWifiClient() {
 
 //format SD Card
 function formatSd() {
-    if(confirm("Do you want to format SD card?\nIt will take about 5 minutes!")){
+    if(confirm("Do you want to format SD crad?\nIt will takes about 5 minutes!!!")){
         document.getElementById('btn_formatsd').classList.add('is-loading');
         const http = new XMLHttpRequest();
         var url = '/format';
