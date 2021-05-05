@@ -245,6 +245,22 @@ function formatSd() {
         http.send();
     }
 }
+//Factory Reset
+function factoryReset() {
+    if(confirm("Do you want to reset the device to factory defaults?\nAll your settings will be lost!\nFiles on the SD card will be preserved.")){
+        document.getElementById('btn_freset').classList.add('is-loading');
+        const http = new XMLHttpRequest();
+        var url = '/freset';
+        http.open("POST", url, true);
+        http.onreadystatechange = function() {//Call a function when the state changes.
+            if(http.readyState == 4 && http.status == 200) {
+                console.log('device will reboot now', http.responseText);
+            }
+            document.getElementById('btn_freset').classList.remove('is-loading');
+        };
+        http.send();
+    }
+}
 
 // get tbz2 file and return as text
 async function getTbz2(filepath) {
@@ -316,7 +332,7 @@ document.addEventListener('DOMContentLoaded', event => {
 
     webSocket.onmessage = function (event) {
         updateStats(JSON.parse(event.data));
-        setTimeout(function(){ webSocket.send("get stats"); }, 5000);
+        setTimeout(function(){ webSocket.send("get stats"); }, 1000);
     };
 
     webSocket.onerror = function (event) { 

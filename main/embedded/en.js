@@ -23,6 +23,7 @@ jsI18n.addLocale("en",{
 "l-lo":"LO frequency (MHz)",
 "l-loeng":"Enable LO",
 "l-diseq":"Enable diseq (22kHz)",
+"l-fres":"Factory Reset",
 "f-title":"File Viewer",
 "f-nodata":"No data Yet...",
 "l-close":"Close",

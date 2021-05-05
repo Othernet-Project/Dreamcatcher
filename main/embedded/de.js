@@ -23,6 +23,7 @@ jsI18n.addLocale("de",{
 "l-lo":"Oszillator-Frequenz (MHz)",
 "l-loeng":"Oszillator aktiv",
 "l-diseq":"DISEq (22kHz) aktiv",
+"l-fres":"Werkseinstellung",
 "f-title":"Datei-Betrachter",
 "f-nodata":"Noch keine Daten...",
 "l-close":"Schließen",
