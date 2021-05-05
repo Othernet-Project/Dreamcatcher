@@ -6,6 +6,7 @@ set(SRCS
     src/sdcard.cpp
     src/wifi.c
     src/web_server.c
+    src/captdns.c
     src/sx1280.cpp
     src/lnb.cpp
     src/settings.cpp
@@ -14,7 +15,7 @@ set(SRCS
 )
 idf_component_register(SRCS ${SRCS} 
                         INCLUDE_DIRS "includes" "ondd" 
-                        EMBED_FILES "embedded/index.html" "embedded/app.js" "embedded/app.css.gz")
+                        EMBED_FILES "embedded/index.html" "embedded/captive.html" "embedded/app.js" "embedded/app.css.gz")
 
 add_prebuilt_library(carousel "ondd/${target_name}/libcarousel.a" PRIV_REQUIRES arduino spiffs fatfs spi_flash sdmmc)
 target_link_libraries(${COMPONENT_LIB} PRIVATE carousel)
