@@ -485,6 +485,19 @@ static esp_err_t format_card_handler(httpd_req_t *req)
 }
 
 /**
+ * Function to factory reset device
+ */
+esp_err_t setDefaults();
+static esp_err_t factory_reset_handler(httpd_req_t *req)
+{
+    vTaskDelay(1000);
+    setDefaults();
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
  * Set lora settings
  */
 static esp_err_t settings_handler(httpd_req_t *req)
@@ -749,7 +762,7 @@ void web_server()
     httpd_register_uri_handler(server, &files_tree);
 
     httpd_uri_t wifi = {
-        .uri       = "/wifi",  // Match all URIs of type /path/to/file
+        .uri       = "/wifi",
         .method    = HTTP_POST,
         .handler   = wifi_credentials_handler,
         .user_ctx  = server_data    // Pass server data as context
@@ -757,15 +770,23 @@ void web_server()
     httpd_register_uri_handler(server, &wifi);
 
     httpd_uri_t format = {
-        .uri       = "/format",  // Match all URIs of type /path/to/file
+        .uri       = "/format",
         .method    = HTTP_POST,
         .handler   = format_card_handler,
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &format);
+    
+        httpd_uri_t freset = {
+        .uri       = "/freset",
+        .method    = HTTP_POST,
+        .handler   = factory_reset_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &freset);
 
     httpd_uri_t settings = {
-        .uri       = "/settings",  // Match all URIs of type /path/to/file
+        .uri       = "/settings",
         .method    = HTTP_POST,
         .handler   = settings_handler,
         .user_ctx  = server_data    // Pass server data as context
