@@ -566,13 +566,16 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "query string len: %d => %s", len, content);
     ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d", _ssid, _pass, type?"AP":"STA", _auth);
 
-    if (type)
+    if (ssid_len && (!pass_len || ( 8 <= pass_len && pass_len <= 32 )))
     {
-        wifi_init_softap(_ssid, _pass, _auth);
-        storeWifiCredsAP(_ssid, _pass);
-    } else {
-        wifi_init_sta(_ssid, _pass);
-        storeWifiCredsSTA(_ssid, _pass);
+        if (type) 
+        {
+            wifi_init_softap(_ssid, _pass, _auth);
+            storeWifiCredsAP(_ssid, _pass);
+        } else {
+            wifi_init_sta(_ssid, _pass);
+            storeWifiCredsSTA(_ssid, _pass);
+        }
     }
 
     /* Respond with an empty chunk to signal HTTP response completion */
