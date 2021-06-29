@@ -5,8 +5,16 @@ extern bool bEnableLO;
 extern bool bEnableDiseq;
 extern uint8_t uLOid;
 
-extern "C" void enableLNB();
-extern "C" void enable22kHz(bool en);
-// extern "C" void enableLO(bool en);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void enableLNB();
+void enable22kHz(bool en);
+void enableLO(bool en, uint8_t id);
+
+#ifdef __cplusplus
+}
+#endif
 
 void lnbStatus();

@@ -72,7 +72,9 @@ void setup()
     }
   }
   if(bWire) enableLNB(); // enable VLNB
-
+  enable22kHz(bEnableDiseq);   // switch LNB to high band if needed
+  enableLO(bEnableLO, uLOid);  // if neccessary, enable local oscillator
+  
   rxQueue = xQueueCreate(QUEUE_LENGTH, RXBUFFER_SIZE);
 #ifdef CONFIG_IDF_TARGET_ESP32S2
   xTaskCreate(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
