@@ -224,7 +224,7 @@ function saveWifiClient() {
 
 //format SD Card
 function formatSd() {
-    if(confirm("Do you want to format SD crad?\nIt will takes about 5 minutes!!!")){
+    if(confirm("Do you want to format SD card?\nIt will take about 5 minutes!")){
         document.getElementById('btn_formatsd').classList.add('is-loading');
         const http = new XMLHttpRequest();
         var url = '/format';
@@ -235,6 +235,22 @@ function formatSd() {
                 console.log('sd card formatted', http.responseText);
             }
             document.getElementById('btn_formatsd').classList.remove('is-loading');
+        }
+        http.send();
+    }
+}
+//Factory Reset
+function factoryReset() {
+    if(confirm("Do you want to reset the device to factory defaults?\nAll your settings will be lost!\nFiles on the SD card will be preserved.")){
+        document.getElementById('btn_freset').classList.add('is-loading');
+        const http = new XMLHttpRequest();
+        var url = '/freset';
+        http.open("POST", url, true);
+        http.onreadystatechange = function() {//Call a function when the state changes.
+            if(http.readyState == 4 && http.status == 200) {
+                console.log('device will reboot now', http.responseText);
+            }
+            document.getElementById('btn_freset').classList.remove('is-loading');
         }
         http.send();
     }
