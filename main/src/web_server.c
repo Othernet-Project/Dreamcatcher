@@ -43,6 +43,8 @@ extern void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr
 
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
+extern const char captive_html_start[] asm("_binary_captive_html_start");
+extern const char captive_html_end[]   asm("_binary_captive_html_end");
 extern const char app_js_start[] asm("_binary_app_js_start");
 extern const char app_js_end[]   asm("_binary_app_js_end");
 extern const char app_css_start[] asm("_binary_app_css_gz_start");
@@ -424,6 +426,24 @@ static esp_err_t index_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t apple_handler(httpd_req_t *req)
+{
+    httpd_resp_send_chunk(req, captive_html_start, captive_html_end - captive_html_start);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+static esp_err_t redirect_handler(httpd_req_t *req)
+{
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/");
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
 static esp_err_t appjs_handler(httpd_req_t *req)
 {
     set_content_type_from_file(req, "app.js");
@@ -699,8 +719,8 @@ void web_server()
      * target URIs which match the wildcard scheme */
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_open_sockets = 7;
-    config.stack_size = 10 * 1024;
-    config.max_uri_handlers = 10;
+    config.stack_size = 12 * 1024;
+    config.max_uri_handlers = 12;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
     if (httpd_start(&server, &config) != ESP_OK) {
@@ -716,6 +736,22 @@ void web_server()
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &index);
+    
+    httpd_uri_t gen_204 = {
+        .uri       = "/gen*",  // Match all URIs of type /path/to/file
+        .method    = HTTP_GET,
+        .handler   = redirect_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &gen_204);
+    
+    httpd_uri_t apple_hotspot = {
+        .uri       = "/hotspot-detect.html",  // Match all URIs of type /path/to/file
+        .method    = HTTP_GET,
+        .handler   = apple_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &apple_hotspot); 
 
     httpd_uri_t app_js = {
         .uri       = "/app.js",  // Match all URIs of type /path/to/file
