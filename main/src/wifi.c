@@ -12,6 +12,8 @@
 #include "wifi.h"
 #include "customize.h"
 
+esp_netif_t *ap_netif = NULL;
+
 static const char *TAG = "wifi softAP";
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -50,7 +52,7 @@ void initWifi(const char* ssid_ap, const char* pass_ap)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     
     esp_netif_create_default_wifi_sta();
-    esp_netif_create_default_wifi_ap();
+    ap_netif = esp_netif_create_default_wifi_ap();
 
     esp_netif_t *esp_netif = NULL;
     esp_netif = esp_netif_next(esp_netif);

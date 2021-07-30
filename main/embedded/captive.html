@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html id="html" class="has-navbar-fixed-top" style="overflow-y: auto;">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Dreamcatcher V4 | Othernet</title>
+        <link rel="stylesheet" href="app.css">
+        <script src="app.js"></script>
+    </head>
+    <body onload="jsI18n.processPage()">
+        <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/">
+                    <p class="is-size-4 has-text-weight-semibold">OTHERNET</p>
+                </a>
+            </div>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbar" onclick="toggleActive('navbar')">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+            </div>
+
+            <div id="navbar" class="navbar-menu">
+            <div class="navbar-start">
+                <div class="navbar-item has-dropdown is-hoverable">
+                   <p class="navbar-link" data-trans="m-lang">Language</p>
+                   <div class="navbar-dropdown">
+                       <a onclick="changeLocale('en')" class="navbar-item">English</a>
+                       <a onclick="changeLocale('fr')" class="navbar-item">Français</a>
+                       <a onclick="changeLocale('de')" class="navbar-item">Deutsch</a>
+                   </div>
+               </div>
+            </div>
+
+            </div>
+        </nav>
+
+        <!-- Dashboard -->
+        <div id="main_dash" class="tabs_main"  style="min-height: calc(100vh - 5rem);">
+        <section class="hero is-primary is-bold">
+            <div class="hero-body">
+                <div class="container">
+                    <h1 class="title" data-trans="d-welcome">Welcome to Othernet</h1>
+                    <p class="subtitle" data-trans="d-sub">A BROADCAST FOR THE DIGITAL AGE</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="container">
+                <p data-trans="captive">You logged on to the Dreamcatcher WiFi Hotspot with your Apple Device. This GUI won't work in the captive portal login screen. Please click on <b>"Cancel"</b> in the upper right corner of this screen and select <b>"Use Without Internet"</b>. Then open your Safari browser and surf to any webpage to use the GUI.</p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container">
+                <div class="content has-text-centered">
+                    <p><strong><a href="https://othernet.is">Othernet.is</a> Dreamcatcher 4</strong> - <span data-trans="footer">Contribute on Github</span>: <a href="https://github.com/Othernet-Project/Dreamcatcher">DC4 Firmware</a></p>
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>

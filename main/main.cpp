@@ -12,6 +12,7 @@
 #include "SPI.h"
 #include "lnb.h"
 #include "Wire.h"
+#include "captdns.h"
 #include "wifi.h"
 
 
@@ -90,6 +91,7 @@ void setup()
   attachInterrupt(1, tpsFault, FALLING);
 
   web_server();
+  captdnsInit();
 
   initSX1280();
 }
