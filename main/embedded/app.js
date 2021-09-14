@@ -3,6 +3,89 @@ let myip = '192.168.4.1';
 
 let files_tree_json = [{"path":"", "dir":1,"name":"Example Files", "size":"0"}, {"path":"/tests/textFile.txt", "dir":0,"name":"textFile.txt", "size":"123"}, {"path":"/tests/Othernet Satcalc by Tynet.eu min.html", "dir":0,"name":"Othernet Satcalc by Tynet.eu min.html", "size":"13123"}, {"path":"/tests/ee1b-wikipedia-Ajla_Tomljanović.html.tbz2", "dir":0,"name":"ee1b-wikipedia-Ajla_Tomljanović.html.tbz2", "size":"146461"}];
 
+let wsHandle;
+let plays = false;
+let midiTimeout;
+let lastMidiBuf;
+
+let synth;
+
+function createSynth() {
+    synth = new Tone.PolySynth(Tone.Synth, {
+        envelope: {
+            attack: 0.02,
+            decay: 0.1,
+            sustain: 0.3,
+            release: 1
+        },
+    }).toDestination()
+    synth.maxPolyphony = 64
+    synth.toDestination();
+    synth.sync();
+    synth.volume.value = -12;
+}
+
+let lastNotePlayed = 0;
+let lastNoteStart = 0;
+
+function midiNoteToFreq (note){
+    return Math.pow(2, ((note - 69) / 12)) * 440;
+}
+
+function playNote(time, note) {
+    let freq = midiNoteToFreq(note[0]);
+    let start = (note[1]-lastNoteStart)+time+0.0001;
+    
+    let vel = note[2]/127;
+    let dur;
+    if (note[3] == 0) {
+        dur = note[3]+0.1;
+    } else {
+        dur = note[3];
+    }
+    synth.triggerAttackRelease(freq, dur, start, vel);
+    lastNotePlayed = start;
+    console.log("Note: "+start+" - "+note[1]+"-"+lastNoteStart+"-"+time);
+}
+
+function startMidi(){
+    createSynth();
+    Tone.start();
+    Tone.Transport.start();
+}
+function stopMidi(){
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    synth.dispose()
+    createSynth();
+    timeSoFar = 0;
+}
+
+function addSongMidi(song){
+    // if something is still playing (tone.now < timeSofar) use it
+    let timeAtAdd;
+    if (Tone.Transport.seconds > lastNotePlayed) {
+        timeAtAdd = Tone.Transport.seconds;
+    } else {
+        timeAtAdd = lastNotePlayed;
+    }
+    console.log("AtAdd: "+timeAtAdd+" - transport time: "+Tone.Transport.seconds+" - lastplayed: "+lastNotePlayed+" - laststart: "+lastNoteStart); 
+    // if there is no last note start, set it to current note
+    if (lastNoteStart == 0 || lastNoteStart > song[0][1]) {
+        lastNoteStart = song[0][1];
+    }
+    
+    let lastNote = [0,0,0,0];
+    song.forEach(elm => {
+        if (elm[0] != 0) {
+            playNote(timeAtAdd, elm);
+            lastNote = elm;
+        }
+    });
+    lastNoteStart = lastNote[1];
+    console.log("Last Note Start: "+lastNoteStart);
+}
+
 // helper functions
 function getExt(path) {
     return (path.match(/(?:.+..+[^\/]+$)/ig) != null) ? path.split('.').slice(-1): 'file';
@@ -301,6 +384,21 @@ async function viewFile(filepath, fileExt) {
     document.getElementById('md_fileview_status').classList.remove('loader');
 }
 
+function toggleMidiStream(){
+    if (!plays) {
+        console.log("Starting Realtime Midi Playback...");
+        plays = true;
+        document.getElementById('btn_play').innerText = "Stop";
+        startMidi();
+        wsHandle.send('get midi');
+    } else {
+        stopMidi();
+        plays = false;
+        document.getElementById('btn_play').innerText = "Play";
+        clearTimeout(midiTimeout);
+    }
+}
+
 // ON Window loaded
 document.addEventListener('DOMContentLoaded', event => {
     getfilestree('/files');
@@ -317,19 +415,44 @@ document.addEventListener('DOMContentLoaded', event => {
         document.getElementById('rcv_loid').value = init_loid;
     } catch (error) {}
 
-    let webSocket = new WebSocket('ws://' + window.location.host + '/ws');
-    webSocket.onopen = function (event) {
+    document.getElementById('volume').addEventListener("input", function (e) {
+        let val = document.getElementById('volume').value;
+        let vol = -((val-10) * -3);
+        document.getElementById('voltext').innerText = vol;
+        synth.volume.value = vol;
+    });
+
+    wsHandle = new WebSocket('ws://' + window.location.host + '/ws');
+    wsHandle.onopen = function (event) {
         document.getElementById('con_status').classList = 'tag is-light is-success';
         document.getElementById('con_status').innerText = 'Connected';
-        webSocket.send("get stats");
+        wsHandle.send("get stats");
     };
 
-    webSocket.onmessage = function (event) {
-        updateStats(JSON.parse(event.data));
-        setTimeout(function(){ webSocket.send("get stats"); }, 1000);
+    wsHandle.onmessage = function (event) {
+        //console.log(event.data);
+        let data = JSON.parse(event.data);
+
+        if (data.type) {
+            // not a status update
+            if (data.type == 'midi') {
+                if (JSON.stringify(lastMidiBuf) !== JSON.stringify(data.data)) {
+                    // add mididata to playback
+                    lastMidiBuf = data.data;
+                    console.log(data.data);
+                    addSongMidi(lastMidiBuf);
+                }
+                midiTimeout = setTimeout(function(){ wsHandle.send("get midi"); }, 250);
+            } else {
+                console.log("got something else");
+            }
+        } else {
+            updateStats(data);
+            setTimeout(function(){ wsHandle.send("get stats"); }, 1000);
+        }
     };
 
-    webSocket.onerror = function (event) { 
+    wsHandle.onerror = function (event) { 
         document.getElementById('con_status').classList = 'tag is-light is-danger';
         document.getElementById('con_status').innerText = 'Connection Error';
     };

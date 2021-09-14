@@ -5,6 +5,7 @@
 #include "carousel.h"
 #include "customize.h"
 #include "settings.h"
+#include "driver/gpio.h"
 
 carousel data_carousel;				// File downloader for this stream
 portMUX_TYPE sxMux;
@@ -38,7 +39,20 @@ static uint8_t lastPacket;
 static uint8_t packets[100] = {0};
 static uint8_t y = 0;
 
+#define BLINK_PIN    GPIO_NUM_5
+
 bool loraReady;                           // variable to display LoRa fault with led or on website
+
+struct midi_data {
+    uint8_t note;
+    float   start;
+    uint8_t velocity;
+    float   duration;
+};
+
+struct midi_data midiarray[32];
+uint8_t firstnote = 0;
+char* txtarray;
 
 /**
  * ISR function from SX1280
@@ -46,6 +60,20 @@ bool loraReady;                           // variable to display LoRa fault with
 IRAM_ATTR void rx1280ISR()
 {
   xTaskNotify(rxTaskHandle, 0x0, eSetBits);
+}
+
+void init_gpio(void) {
+  gpio_reset_pin(BLINK_PIN);
+  gpio_set_direction(BLINK_PIN, GPIO_MODE_OUTPUT);
+  gpio_set_level(BLINK_PIN, 0);
+}
+
+void blinky(void *pvParameter)
+{
+  gpio_set_level(BLINK_PIN, 1);
+  vTaskDelay(50 / portTICK_RATE_MS); // sleep 500ms
+  gpio_set_level(BLINK_PIN, 0);
+  vTaskDelete(NULL);
 }
 
 /**
@@ -96,6 +124,20 @@ extern "C" void getStats(uint16_t* _crc, uint16_t* _header)
   *_header = header;
 }
 
+extern "C" void getMidi(char* _txtarray)
+{
+  const char* txt_pre = "{\"type\":\"midi\",\"data\":[";
+  const char* txt_suf = "]}";
+  const char* txt_template = "[%d,%f,%d,%f],";
+  int strlength = 0;
+  strlength += sprintf(_txtarray+strlength, txt_pre);
+  for (midi_data x : midiarray)
+  {
+    strlength += sprintf(_txtarray+strlength, txt_template, x.note, x.start, x.velocity, x.duration);
+  }
+  strlength += sprintf(_txtarray+strlength-1, txt_suf);
+}
+
 /**
  * Helper function to feed website with stats
  */
@@ -139,6 +181,8 @@ void rxTaskSX1280(void* p)
 
         RXPacketL = readbufferSX1280(data, RXBUFFER_SIZE);
 
+        xTaskCreate(&blinky, "blinky", 512,NULL,5,NULL);
+
         LT.setRx(0);
 
         packetsRX++;
@@ -146,6 +190,27 @@ void rxTaskSX1280(void* p)
         packets[lastPacket] = RXPacketL;
         packetsCount++;
         y++;
+        // Check if we got a special Realtime Packet
+        // 0x73 = Midi Stream
+        if(data[2] == 0x73){
+          udp.writeTo(data+4, RXPacketL-8, IPAddress(192,168,0,181), 8281);
+          uint8_t midibuf[10] = {0};
+          int chunks = floor((RXPacketL-8)/10);
+          //loop at data in 10byte chunks to parse Data
+          memset(midiarray, 0, sizeof(midiarray));
+          for (int i = 0; i < chunks; i++)
+          {  
+            memcpy(midibuf, data+4+i*10, 10);
+          
+            struct midi_data tmpmidi;
+
+            memcpy(&tmpmidi.note, midibuf, 1);
+            memcpy(&tmpmidi.start, midibuf+1, 4);
+            memcpy(&tmpmidi.velocity, midibuf+5, 1);
+            memcpy(&tmpmidi.duration, midibuf+6, 4);
+            midiarray[i] = tmpmidi;
+          }
+        }
 
         if(RXPacketL > 0) {
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
@@ -159,7 +224,7 @@ void rxTaskSX1280(void* p)
             }
           }
           data[0] = RXPacketL;
-          udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
+          udp.writeTo(data, RXPacketL, IPAddress(192,168,0,181), 8280);
         }
       }
 
@@ -178,6 +243,8 @@ void rxTaskSX1280(void* p)
  */
 void initSX1280()
 {
+  init_gpio();
+  
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
 
   //setup hardware pins used by device, then check if device is found

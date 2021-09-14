@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Dreamcatcher V4 | Othernet</title>
         <link rel="stylesheet" href="app.css">
+        <script src="tone.js"></script>
         <script src="app.js"></script>
         <script src="myip.js"></script>
     </head>
@@ -335,14 +336,22 @@
                             <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
-                  <div class="column is-3">
-                    <div class="notification">
-                        <h3 class="subtitle has-text-grey has-text-weight-semibold">File info</h3>
-                        <p>Name<span id="stats_file" class="is-pulled-right">-</span></p>
-                        <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                    <div class="column is-3">
+                        <div class="notification">
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Realtime</h3>
+                            <button id="btn_play" onclick="toggleMidiStream()" class="button">Play</button>
+                            <br>
+                            <input type="range" id="volume" min="0" max="10" value="6">
+                            <p id="voltext">-12</p>
+                        </div>
                     </div>
-                </div>
-              
+                    <div class="column is-6">
+                        <div class="notification">
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold">File info</h3>
+                            <p>Name<span id="stats_file" class="is-pulled-right">-</span></p>
+                            <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
