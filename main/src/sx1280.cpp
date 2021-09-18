@@ -193,7 +193,7 @@ void rxTaskSX1280(void* p)
         // Check if we got a special Realtime Packet
         // 0x73 = Midi Stream
         if(data[2] == 0x73){
-          udp.writeTo(data+4, RXPacketL-8, IPAddress(192,168,0,181), 8281);
+          udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
           uint8_t midibuf[10] = {0};
           int chunks = floor((RXPacketL-8)/10);
           //loop at data in 10byte chunks to parse Data
@@ -224,7 +224,7 @@ void rxTaskSX1280(void* p)
             }
           }
           data[0] = RXPacketL;
-          udp.writeTo(data, RXPacketL, IPAddress(192,168,0,181), 8280);
+          udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
         }
       }
 
