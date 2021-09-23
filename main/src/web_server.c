@@ -743,7 +743,7 @@ void web_server()
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_open_sockets = 7;
     config.stack_size = 10 * 1024;
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 16;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
     if (httpd_start(&server, &config) != ESP_OK) {
