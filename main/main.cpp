@@ -39,6 +39,8 @@ void loop()
     bitrate = countBitrate(update);
     if(bWire) lnbStatus();
     vTaskGetRunTimeStats2();
+    // heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
+
   }
 
   if (resetStart + 5000 < millis() && !defaultsPin)

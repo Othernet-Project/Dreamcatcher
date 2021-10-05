@@ -1,8 +1,8 @@
 #pragma once
 #include "sdkconfig.h"
 
-#define HW_VERSION "2021.04"
-#define FW_VERSION "1.3.0-rc"
+#define HW_VERSION "2021.09"
+#define FW_VERSION "1.4.0-rc"
 
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet DC4"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
@@ -11,7 +11,7 @@
 #define DEFAULT_SF LORA_SF9
 #define DEFAULT_CR LORA_CR_4_5
 
-#define LNB_ADDRESS 0x09 // older boards 0x08, DC4 0121 rev002 0x09
+#define LNB_ADDRESS 0x10 // older boards 0x08, DC4 0121 rev002 0x09, DC5 0x10
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define SD_MISO  (gpio_num_t)37
