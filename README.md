@@ -9,12 +9,12 @@ The ESP32 can create a wifi access point and also connect to an existing wifi ne
 # Getting started
 
 This application is prepared to build with arduino as component. Easiest way is to clone with `git clone --recursive`.
-Because most recent arduino release (v4.x) is in beta stage this application was prepared and tested with particular esp-idf commit. Curently it is https://github.com/espressif/esp-idf/commit/b0150615dff529662772a60dcb57d5b559f480e2
+Because most recent arduino release (v4.x) is in beta stage this application was prepared and tested with particular esp-idf commit. Curently it is https://github.com/espressif/esp-idf/commit/220590d599e134d7a5e7f1e683cc4550349ffbf8
 
 Some settings can be changed in `customize.h`.
 
 ## Building on Ubuntu/Debian
-To setup everything and build the Dreamcatcher 4 Firmware you can follow the following Steps on Ubuntu/Debian (tested on Ubuntu 18.04).
+To setup everything and build the Dreamcatcher 4 Firmware you can follow the following Steps on Ubuntu/Debian (tested on Ubuntu 18.04 and 20.04).
 
 ### Install needed packages & Setup python 3 as default
 ```
@@ -27,7 +27,7 @@ mkdir -p ~/esp
 cd ~/esp
 git clone https://github.com/espressif/esp-idf.git
 cd esp-idf,
-git checkout b0150615dff529662772a60dcb57d5b559f480e2
+git checkout 220590d599e134d7a5e7f1e683cc4550349ffbf8
 git submodule update --init --recursive
 ./install.sh
 ```
@@ -53,10 +53,6 @@ If that is successful you can flash your ESP Board, connect it to your PC and us
 
 Then use `sudo usermod -a -G dialout $USER` to set the Permissions as needed, you need to restart/relogin to make the changes take affect.
 
-After this you can Flash your board with `idf.py -p /dev/ttyUSB0 flash`.
+After this you can Flash your board with `idf.py -p /dev/ttyACM0 flash`.
 
 ## Possible runtime issues
-
-* there is change in esp-idf i2c and arduino-esp32 has not been updated yet, this requires to update `esp32-hal-i2c.c` line 1819 with code `i2c_config_t conf = {0};`
-* some changes may be required in https://github.com/espressif/arduino-esp32/blob/idf-release/v4.2/CMakeLists.txt, in this repository is included file with fixed content:
-https://github.com/chegewara/dreamcatcher4/blob/master/CMakeLists.txt_arduino-esp32

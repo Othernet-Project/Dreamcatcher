@@ -388,6 +388,10 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
  */
 static esp_err_t websocket_handler(httpd_req_t *req)
 {
+    if (req->method == HTTP_GET) {
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        return ESP_OK;
+    }
     uint8_t buf[128] = { 0 };
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -527,7 +531,7 @@ static esp_err_t settings_handler(httpd_req_t *req)
     char* loid = strstr(content, "loid=");
     uLOid = atoi(loid + 5);
 
-    uint32_t _freq = strtoul( freq + 5, &bw, 0);
+    uint32_t _freq = strtoul( freq + 5, &freq, 0);
     int _bw = atoi(bw + 4);
     int _sf = atoi(sf + 3);
     int _cr = atoi(cr + 3);
@@ -540,6 +544,49 @@ static esp_err_t settings_handler(httpd_req_t *req)
     enable22kHz(bDiseq);
     enableLO(bLO, uLOid);
     updateLoraSettings(_freq, _bw, _sf, _cr);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * Set dCSS, EN5xxx
+ */
+extern uint32_t prepareODU(char* ub, char* freq, char* p);
+extern void sendODUchannel(uint32_t _v);
+
+static esp_err_t en5xxx_handler(httpd_req_t *req)
+{
+    char content[500] = {0};
+
+    /* Truncate if content length larger than the buffer */
+    size_t len = MIN(req->content_len, sizeof(content));
+
+    int ret = httpd_req_recv(req, content, len);
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "%s", __func__);
+
+        char* data[4] = {};
+        uint8_t n = 0;
+        char *ptr = strtok(content, "&");
+        while(ptr != NULL)
+        {
+            data[n++] = ptr;
+            printf("%s\n", ptr);
+            ptr = strtok(NULL, "&");
+        }
+        data[len] = 0x0;
+    uint32_t val = prepareODU(data[0] + 3, data[2] + 5, data[1] + 4);
+    ESP_LOGI(TAG, "freq: %s, UB: %s, POL: %s, VAL: %d", data[2] + 5, data[0] + 3, data[1] + 4, val);
+    
+    sendODUchannel(val);
 
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
@@ -700,7 +747,7 @@ void web_server()
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_open_sockets = 7;
     config.stack_size = 10 * 1024;
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 15;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
     if (httpd_start(&server, &config) != ESP_OK) {
@@ -792,4 +839,12 @@ void web_server()
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &settings);
+
+    httpd_uri_t en5xxx = {
+        .uri       = "/dcss",
+        .method    = HTTP_POST,
+        .handler   = en5xxx_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &en5xxx);    
 }

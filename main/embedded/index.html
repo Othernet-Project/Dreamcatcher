@@ -35,6 +35,7 @@
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
                         <a onclick="toggleModal('md_receiver')"class="navbar-item">Receiver</a>
+                        <a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>
                     </div>
                 </div>
             </div>
@@ -124,6 +125,45 @@
                         </div>
                         <div class="control">
                             <button onclick="toggleModal('md_wificlient')" class="button is-dark">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="md_dcss" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <h3 class="subtitle">Wifi Client<span id="tag_saveDcss" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    <div class="field">
+                        <label class="label">UB channel</label>
+                        <div class="control">
+                            <input id="dcss_ub" class="input" type="number" name="ub">
+                        </div>
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Polarity</label>
+                        <div class="control">
+                            <input id="H" class="radio" type="radio" name="dcss_pol" checked><label> Horizontal</label><br>
+                            <input id="V" class="radio" type="radio" name="dcss_pol"><label> Vertical</label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Frequency</label>
+                        <div class="control">
+                            <input id="dcss_freq" class="input" type="number" name="freq">
+                        </div>
+                    </div>
+                    
+                    <div class="field is-grouped pt-4">
+                        <div class="control">
+                            <button onclick="sendDCSS()" class="button is-link">Save</button>
+                        </div>
+                        <div class="control">
+                            <button onclick="toggleModal('md_dcss')" class="button is-dark">Cancel</button>
                         </div>
                     </div>
                 </div>
