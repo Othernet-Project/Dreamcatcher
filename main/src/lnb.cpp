@@ -15,26 +15,44 @@ int detectedLNB = 0;
 bool bEnableLO;
 bool bEnableDiseq;
 
+byte lnbAddr = 0x08;
+
+void searchLnbAddr(){
+  int lnbAddrs[] = {0x08, 0x09, 0x10, 0x60};
+  
+  Serial.println("Detecting LNB Chip...");
+  for (int addr : lnbAddrs){
+    // try to connect to LNB Chip (TPS65xx)
+    Wire.beginTransmission((uint8_t)addr);
+    if (Wire.endTransmission() == 0) // Receive 0 = success (ACK response)
+    {
+      Serial.print("LNB Chip found at Addr: ");
+      Serial.println(addr);
+      lnbAddr = addr;
+      break;
+    }
+  }
+}
+
 /**
  * Read LNB chip status to get voltage, or LNB being connected
  */
 void lnbStatus()
 {
   uint8_t _v = 0;
-  Wire.beginTransmission(LNB_ADDRESS);
+  Wire.beginTransmission((uint8_t)lnbAddr);
   if (Wire.endTransmission() == 0) // Receive 0 = success (ACK response)
   {
-    // Serial.println("LNB chip detected");
-    Wire.beginTransmission((uint8_t)LNB_ADDRESS);
+    Wire.beginTransmission((uint8_t)lnbAddr);
     Wire.write((uint8_t)0x00);
     Wire.endTransmission();
-    Wire.requestFrom(LNB_ADDRESS, 1);
+    Wire.requestFrom((uint8_t)lnbAddr, (uint8_t)1);
     _v = Wire.read();
 
-    Wire.beginTransmission((uint8_t)LNB_ADDRESS);
+    Wire.beginTransmission((uint8_t)lnbAddr);
     Wire.write((uint8_t)0x02);
     Wire.endTransmission();
-    Wire.requestFrom(LNB_ADDRESS, 1);
+    Wire.requestFrom((uint8_t)lnbAddr, (uint8_t)1);
     detectedLNB = Wire.read(); // bit1 - connected, bit5 - LDO_ON, bit0 - in range, bit3 - OCP, bit4 - termal prot
     switch ((_v & 0x1E) >> 1)
     {
@@ -97,11 +115,12 @@ void lnbStatus()
  */
 extern "C" void enableLNB()
 {
-  Wire.beginTransmission(LNB_ADDRESS);
+  searchLnbAddr();
+
+  Wire.beginTransmission((uint8_t)lnbAddr);
   if (Wire.endTransmission() == 0) // Receive 0 = success (ACK response)
   {
-    log_i("LNB chip detected");
-    Wire.beginTransmission((uint8_t)LNB_ADDRESS);
+    Wire.beginTransmission((uint8_t)lnbAddr);
     Wire.write((uint8_t)0x0);
     if (bEnableLNB)
     {
@@ -112,7 +131,7 @@ extern "C" void enableLNB()
       Wire.write((uint8_t)128);
     }
     Wire.endTransmission();
-    Wire.beginTransmission((uint8_t)LNB_ADDRESS);
+    Wire.beginTransmission((uint8_t)lnbAddr);
     Wire.write((uint8_t)0x1);
     if (bEnableLNB)
     {

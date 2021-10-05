@@ -11,7 +11,7 @@
 #define DEFAULT_SF LORA_SF9
 #define DEFAULT_CR LORA_CR_4_5
 
-#define LNB_ADDRESS 0x10 // older boards 0x08, DC4 0121 rev002 0x09, DC5 0x10
+//#define LNB_ADDRESS 0x09 // Now handled in lnb.cpp - older boards 0x08, DC4 0121 rev002 0x09, Q233 0x60
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define SD_MISO  (gpio_num_t)37
