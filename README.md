@@ -56,3 +56,5 @@ Then use `sudo usermod -a -G dialout $USER` to set the Permissions as needed, yo
 After this you can Flash your board with `idf.py -p /dev/ttyACM0 flash`.
 
 ## Possible runtime issues
+
+- you need to remove the line `libraries/LITTLEFS/src/LITTLEFS.cpp` in cmakeLists.txt of the arduino module.
