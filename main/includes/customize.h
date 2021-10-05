@@ -1,7 +1,7 @@
 #pragma once
 #include "sdkconfig.h"
 
-#define HW_VERSION "2021.05"
+#define HW_VERSION "2021.09"
 #define FW_VERSION "1.4.0-rc"
 
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet DC4"

@@ -305,6 +305,39 @@ function saveWifiClient() {
     }
 }
 
+// send WIFI Creds to backend
+function postDCSSSettings(path, ub, pol, freq) {
+    const http = new XMLHttpRequest();
+
+    console.log(path);
+    var params = 'ub=' + ub + '&pol=' + pol + '&freq=' + freq;
+    console.log(params);
+    var url = '/dcss';
+    http.open("POST", url, true);
+    // Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            console.log('dcss set', http.responseText);
+            return true;
+        }
+    }
+    http.send(params);
+    return true;
+}
+
+// save WIFI AP
+function sendDCSS() {
+    let ub = document.getElementById('dcss_ub').value;
+    let pol = document.querySelector('input[name="dcss_pol"]:checked').id;
+    let freq = document.getElementById('dcss_freq').value;
+    if(postDCSSSettings('', ub, pol, freq)){
+        document.getElementById('tag_saveDcss').classList.remove('is-hidden');
+        setTimeout(function(){ document.getElementById('tag_saveDcss').classList.add('is-hidden'); }, 2000);
+    }
+}
+
 //format SD Card
 function formatSd() {
     if(confirm("Do you want to format SD card?\nIt will take about 5 minutes!")){

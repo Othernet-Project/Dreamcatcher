@@ -128,7 +128,7 @@ extern "C" void enableLNB()
     }
     else
     {
-      Wire.write((uint8_t)0x0);
+      Wire.write((uint8_t)128);
     }
     Wire.endTransmission();
     Wire.beginTransmission((uint8_t)lnbAddr);
@@ -139,7 +139,7 @@ extern "C" void enableLNB()
     }
     else
     {
-      Wire.write((uint8_t)136);
+      Wire.write((uint8_t)0);
     }
     Wire.endTransmission();
   }
