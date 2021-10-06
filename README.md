@@ -21,7 +21,7 @@ To setup everything and build the Dreamcatcher 4 Firmware you can follow the fol
 sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
 ```
-### Install esp-idf at Commit b0150615dff529662772a60dcb57d5b559f480e2
+### Install esp-idf at Commit 220590d599e134d7a5e7f1e683cc4550349ffbf8
 ```
 mkdir -p ~/esp
 cd ~/esp
@@ -54,7 +54,3 @@ If that is successful you can flash your ESP Board, connect it to your PC and us
 Then use `sudo usermod -a -G dialout $USER` to set the Permissions as needed, you need to restart/relogin to make the changes take affect.
 
 After this you can Flash your board with `idf.py -p /dev/ttyACM0 flash`.
-
-## Possible runtime issues
-
-- you need to remove the line `libraries/LITTLEFS/src/LITTLEFS.cpp` in cmakeLists.txt of the arduino module.
