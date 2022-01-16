@@ -7,12 +7,16 @@
 #include "freertos/task.h"
 #include "customize.h"
 #include "settings.h"
-
-#include "sx1280.h"
 #include "SPI.h"
 #include "lnb.h"
 #include "Wire.h"
 #include "wifi.h"
+
+#if LORA_USE_LR1110
+  #include "lr1110.h"
+#else
+  #include "sx1280.h"
+#endif
 
 
 char myIP[20] = "192.168.4.1";
@@ -39,6 +43,7 @@ void loop()
     bitrate = countBitrate(update);
     if(bWire) lnbStatus();
     vTaskGetRunTimeStats2();
+    Serial.println("Alive...");
     // heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
 
   }
@@ -79,7 +84,15 @@ void setup()
   
   rxQueue = xQueueCreate(QUEUE_LENGTH, RXBUFFER_SIZE);
 #ifdef CONFIG_IDF_TARGET_ESP32S2
-  xTaskCreate(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
+  if (LORA_USE_LR1110)
+  {
+    Serial.println("LR1110 is used");
+    xTaskCreate(rxTaskLR1110, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
+    //xTaskCreate(dio1IrqTask, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
+  } else {
+    Serial.println("SX1280 is used");
+    xTaskCreate(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
+  }
 #else
   xTaskCreatePinnedToCore(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle, 1); // stack size may be increased to receive bigger files
 #endif
@@ -93,6 +106,15 @@ void setup()
 
   web_server();
 
-  initSX1280();
+  if (LORA_USE_LR1110)
+  {
+    Serial.println("init LR1110");
+    initLR1110();
+    getLR1110Info();
+  } else {
+    Serial.println("init SX1280");
+    initSX1280();
+  }
+  
 }
 

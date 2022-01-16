@@ -1,8 +1,8 @@
 #pragma once
 #include "sdkconfig.h"
 
-#define HW_VERSION "2021.09"
-#define FW_VERSION "1.4.0-rc"
+#define HW_VERSION "2022.01"
+#define FW_VERSION "1.5.0-rc"
 
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet DC4"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
@@ -10,6 +10,8 @@
 #define DEFAULT_BW LORA_BW_0200
 #define DEFAULT_SF LORA_SF9
 #define DEFAULT_CR LORA_CR_4_5
+
+#define LORA_USE_LR1110 true
 
 //#define LNB_ADDRESS 0x09 // Now handled in lnb.cpp - older boards 0x08, DC4 0121 rev002 0x09, Q233 0x60
 
@@ -27,7 +29,7 @@
 
 #define NRESET 3                               //reset pin on LoRa device
 #define RFBUSY 33                               //busy line
-#define DIO1 2                                 //DIO1 pin on LoRa device, used for RX and TX done 
+#define DIO1 9                                //DIO1 pin on LoRa device, used for RX and TX done 2 on SX, 9 on LR1110
 
 // I2C
 #define I2C_SDA 16
