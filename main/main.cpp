@@ -40,10 +40,11 @@ void loop()
   if (update >= 1000)
   {
     lastUpdate = millis();
-    bitrate = countBitrate(update);
-    if(bWire) lnbStatus();
-    vTaskGetRunTimeStats2();
-    Serial.println("Alive...");
+    //bitrate = countBitrate(update);
+    //if(bWire) lnbStatus();
+    //vTaskGetRunTimeStats2();
+    //Serial.println("Alive...");
+    Serial.printf("Alive... DIO1: %i \n", digitalRead(DIO1));
     // heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
 
   }

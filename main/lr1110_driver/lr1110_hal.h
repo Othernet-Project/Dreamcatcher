@@ -114,6 +114,9 @@ lr1110_hal_status_t lr1110_hal_write( const void* context, const uint8_t* comman
 lr1110_hal_status_t lr1110_hal_read( const void* context, const uint8_t* command, const uint16_t command_length,
                                      uint8_t* data, const uint16_t data_length );
 
+lr1110_hal_status_t lr1110_hal_write_read( const void* context, const uint8_t* command, uint8_t* data,
+                                           const uint16_t data_length );
+
 /*!
  * @brief  Direct read from the SPI bus
  *

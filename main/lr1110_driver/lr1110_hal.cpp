@@ -66,6 +66,25 @@ lr1110_hal_status_t lr1110_hal_read(const void *context, const uint8_t *command,
 }
 
 lr1110_hal_status_t lr1110_hal_direct_read( const void* context, uint8_t* data, const uint16_t data_length ){
+    //TODO: add right implementation
+    SPIClass *spi = ((lr1110_context_t *)context)->spi;
+    uint8_t busy = ((lr1110_context_t *)context)->busy;
+    uint8_t nss = ((lr1110_context_t *)context)->nss;
+    memset(data, 0x0, data_length);
+
+    while (digitalRead(busy))
+        ets_delay_us(10);
+
+    spi->beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
+    
+    digitalWrite(nss, LOW);
+    spi->transfer(LR1110_NOP);
+    spi->transfer(data, data_length);
+
+    digitalWrite(nss, HIGH);
+
+    spi->endTransaction();
+
     return LR1110_HAL_STATUS_OK;
 }
 

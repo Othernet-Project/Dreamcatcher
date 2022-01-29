@@ -122,10 +122,11 @@ lr1110_status_t lr1110_system_clear_reset_status_info( const void* context );
  *
  * @returns Operation status
  */
-static inline lr1110_status_t lr1110_system_get_irq_status( const void* context, lr1110_system_irq_mask_t* irq_status )
+lr1110_status_t lr1110_system_get_irq_status( const void* context, lr1110_system_irq_mask_t* irq_status );
+/*static inline lr1110_status_t lr1110_system_get_irq_status( const void* context, lr1110_system_irq_mask_t* irq_status )
 {
     return lr1110_system_get_status( context, 0, 0, irq_status );
-}
+}*/
 
 /*!
  * @brief Return the version of the system (hardware and software)

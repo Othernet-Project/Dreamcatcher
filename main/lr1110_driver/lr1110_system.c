@@ -158,6 +158,7 @@ lr1110_status_t lr1110_system_reset( const void* context )
     return ( lr1110_status_t ) lr1110_hal_reset( context );
 }
 
+
 lr1110_status_t lr1110_system_get_status( const void* context, lr1110_system_stat1_t* stat1,
                                           lr1110_system_stat2_t* stat2, lr1110_system_irq_mask_t* irq_status )
 {
@@ -312,6 +313,27 @@ lr1110_status_t lr1110_system_set_dio_irq_params( const void* context, const uin
     };
 
     return ( lr1110_status_t ) lr1110_hal_write( context, cbuffer, LR1110_SYSTEM_SET_DIO_IRQ_PARAMS_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_status_t lr1110_system_get_irq_status( const void* context, lr1110_system_irq_mask_t* irq_status )
+{
+    uint8_t rbuffer[5];
+    uint8_t cbuffer[2] = {
+        ( uint8_t )( LR1110_SYSTEM_GET_STATUS_OC >> 8 ),
+        ( uint8_t )( LR1110_SYSTEM_GET_STATUS_OC >> 0 ),
+    };
+
+    lr1110_status_t status =
+        ( lr1110_status_t ) lr1110_hal_read( context, cbuffer, sizeof( cbuffer ), rbuffer, sizeof( rbuffer ) );
+
+    if( status == LR1110_STATUS_OK )
+    {
+        *irq_status =
+            ( ( lr1110_system_irq_mask_t ) rbuffer[1] << 24 ) + ( ( lr1110_system_irq_mask_t ) rbuffer[2] << 16 ) +
+            ( ( lr1110_system_irq_mask_t ) rbuffer[3] << 8 ) + ( ( lr1110_system_irq_mask_t ) rbuffer[4] << 0 );
+    }
+
+    return status;
 }
 
 lr1110_status_t lr1110_system_clear_irq_status( const void* context, const lr1110_system_irq_mask_t irqs_to_clear )

@@ -211,6 +211,7 @@ lr1110_status_t lr1110_regmem_write_buffer8( const void* context, const uint8_t*
                                                  length );
 }
 
+/*
 lr1110_status_t lr1110_regmem_read_buffer8( const void* context, uint8_t* buffer, const uint8_t offset,
                                             const uint8_t length )
 {
@@ -220,6 +221,21 @@ lr1110_status_t lr1110_regmem_read_buffer8( const void* context, uint8_t* buffer
         offset,
         length,
     };
+
+    return ( lr1110_status_t ) lr1110_hal_read( context, cbuffer, LR1110_REGMEM_READ_BUFFER8_CMD_LENGTH, buffer,
+                                                length );
+}*/
+
+lr1110_status_t lr1110_regmem_read_buffer8( const void* context, uint8_t* buffer, const uint8_t offset,
+                                            const uint8_t length )
+{
+    uint8_t cbuffer[LR1110_REGMEM_READ_BUFFER8_CMD_LENGTH];
+
+    cbuffer[0] = ( uint8_t )( LR1110_REGMEM_READ_BUFFER8_OC >> 8 );
+    cbuffer[1] = ( uint8_t )( LR1110_REGMEM_READ_BUFFER8_OC >> 0 );
+
+    cbuffer[2] = offset;
+    cbuffer[3] = length;
 
     return ( lr1110_status_t ) lr1110_hal_read( context, cbuffer, LR1110_REGMEM_READ_BUFFER8_CMD_LENGTH, buffer,
                                                 length );

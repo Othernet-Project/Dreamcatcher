@@ -51,7 +51,7 @@ static uint8_t lastPacket;
 static uint8_t packets[100] = {0};
 static uint8_t y = 0;
 
-#define BLINK_PIN    GPIO_NUM_5
+#define BLINK_PIN    GPIO_NUM_34
 
 bool loraReady;                           // variable to display LoRa fault with led or on website
 
@@ -126,7 +126,7 @@ class mycallback : public carousel::callback {
 };
 
 /**
- * ISR function from SX1280
+ * ISR function from LR1110
  */
 IRAM_ATTR void rx1110ISR()
 {
@@ -136,8 +136,8 @@ IRAM_ATTR void rx1110ISR()
 
 IRAM_ATTR void busyIRQ()
 {
-  Serial.print("irq on busy, level: ");
-  Serial.println(digitalRead(33));
+  //Serial.print("irq on busy, level: ");
+  //Serial.println(digitalRead(33));
 }
 
 /**
@@ -152,6 +152,8 @@ IRAM_ATTR void busyIRQ()
  */
 void initLR1110()
 {
+  init_gpio();
+
   lr1110_system_stat1_t lrStat1;
   lr1110_system_stat2_t lrStat2;
   lr1110_system_irq_mask_t lrIrq_status; 
@@ -311,122 +313,86 @@ uint8_t readbufferLR1110(uint8_t *rxbuffer, uint8_t size)
   uint8_t _RXPacketL = 0;
   uint32_t regdata;
 
+  /*
   lr1110_system_get_and_clear_irq_status(&lrRadio, &regdata);
 
   if ( (regdata & LR1110_SYSTEM_IRQ_HEADER_ERROR) | (regdata & LR1110_SYSTEM_IRQ_CRC_ERROR) ) //check if any of the preceding IRQs is set
   {
     return 0;
   }
+  */
+
+  //get lor header info
+  lr1110_radio_lora_cr_t pktCrInfo;
+  bool CRCInfo;
+  lr1110_radio_get_lora_rx_info(&lrRadio, &CRCInfo, &pktCrInfo);
+  Serial.printf("Pkt header info - crc: %02X , codingrate: %02X \n", CRCInfo, pktCrInfo);
+
+  //get lora stats
+  lr1110_radio_stats_lora_t loraStats;
+  lr1110_radio_get_lora_stats(&lrRadio, &loraStats);
+  Serial.printf("Lorastats: RX %i, CRC %i, HEADER %i \n", loraStats.nb_pkt_received, loraStats.nb_pkt_crc_error, loraStats.nb_pkt_header_error);
 
   // get rx buffer size to read
   lr1110_radio_rx_buffer_status_t bufferStatus;
   lr1110_radio_get_rx_buffer_status(&lrRadio, &bufferStatus);
 
-  RXPacketL = bufferStatus.pld_len_in_bytes;
+  _RXPacketL = bufferStatus.pld_len_in_bytes;
   RXstart = bufferStatus.buffer_start_pointer;
 
   // read rxbuffer over SPI afap
-  //lr1110_regmem_read_buffer8(&lrRadio, &*rxbuffer, RXstart, _RXPacketL);
   uint8_t buffer[255] = {0};
 
   lr1110_regmem_read_buffer8(&lrRadio, buffer, RXstart, _RXPacketL);
 
+  Serial.printf("RX Buffer (len: %i, offset: %i): \n", RXPacketL, RXstart);
   Serial.println((char*)buffer);
 
   return _RXPacketL;
 }
-
-void dio1IrqTask(void *p)
-{
-  uint32_t val;
-  while (1)
-  {
-    if (xTaskNotifyWait(0x0, 0x0, &val, portMAX_DELAY))
-    {
-      lr1110_system_irq_mask_t irq_status;
-      lr1110_system_get_and_clear_irq_status(&lrRadio, &irq_status);
-      if(irq_status == 0x0) continue;
-      if(irq_status & LR1110_SYSTEM_IRQ_RX_DONE)
-      {
-        Serial.println("LR1110_SYSTEM_IRQ_RX_DONE");
-        lr1110_radio_pkt_status_lora_t pkt_status;
-        lr1110_radio_get_lora_pkt_status( &lrRadio, &pkt_status );
-        Serial.printf("%d, %d, %d, %d\n", 868000000, pkt_status.snr_pkt_in_db, pkt_status.rssi_pkt_in_dbm, pkt_status.signal_rssi_pkt_in_dbm);
-        
-        //lr1110_radio_rx_buffer_status_t rx_buffer_status;
-        //lr1110_radio_get_rx_buffer_status(&lrRadio, &rx_buffer_status);
-        //uint8_t buffer[255] = {0};
-        //lr1110_regmem_read_buffer8(&lrRadio, buffer, rx_buffer_status.buffer_start_pointer, rx_buffer_status.pld_len_in_bytes);
-
-        //Serial.println((char*)buffer);
-      }
-      if(irq_status & LR1110_SYSTEM_IRQ_TX_DONE)
-      {
-        Serial.println("LR1110_SYSTEM_IRQ_TX_DONE");
-      } else if (irq_status &  LR1110_SYSTEM_IRQ_TIMEOUT) {
-        Serial.println("LR1110_SYSTEM_IRQ_TIMEOUT");
-      }
-      
-      if(irq_status & LR1110_SYSTEM_IRQ_HEADER_ERROR)
-      {
-        Serial.println("LR1110_SYSTEM_IRQ_HEADER_ERROR");
-      }
-      if(irq_status & LR1110_SYSTEM_IRQ_CRC_ERROR)
-      {
-        Serial.println("LR1110_SYSTEM_IRQ_CRC_ERROR");
-      }
-      if(irq_status & LR1110_SYSTEM_IRQ_PREAMBLE_DETECTED)
-      {
-        Serial.println("LR1110_SYSTEM_IRQ_PREAMBLE_DETECTED");
-      }
-
-      lr1110_radio_set_rx( &lrRadio, 0 );
-    }
-  }
-}
-
 
 /**
  * Read packet from LR1110, when IRQ is triggered
  */
 void rxTaskLR1110(void* p)
 {
-  Serial.println("rxTask triggered");
-
   static uint32_t mask = 0;
-  //data_carousel.init("/files/tmp", new mycallback());
+  data_carousel.init("/files/tmp", new mycallback());
   while(1) {
     if (xTaskNotifyWait(0, 0, &mask, portMAX_DELAY))
     {
+      Serial.println("rxTask triggered");
+
       lr1110_system_get_and_clear_irq_status(&lrRadio, &IRQStatus);
-      //if(IRQStatus == 0x0) continue;
+      //lr1110_system_clear_irq_status(&lrRadio, LR1110_SYSTEM_IRQ_ALL_MASK | 0x14 | 0x15);
+      
+      Serial.println(IRQStatus);
+      if(IRQStatus == 0x0) continue;
       if(IRQStatus & LR1110_SYSTEM_IRQ_RX_DONE) {
         Serial.println("GOT A PACKET WOOHOO!");
 
-        //TODO: packet stats
-        lr1110_radio_pkt_status_lora_t pktStatus;
-        lr1110_radio_get_lora_pkt_status(&lrRadio, &pktStatus);
+        lr1110_radio_pkt_status_lora_t pkt_status;        
+        lr1110_radio_get_lora_pkt_status( &lrRadio, &pkt_status );        
 
-        PacketRSSI = pktStatus.rssi_pkt_in_dbm;              //read the recived RSSI value
-        PacketSNR = pktStatus.snr_pkt_in_db;                //read the received SNR value
+        PacketRSSI = pkt_status.rssi_pkt_in_dbm;              //read the recived RSSI value
+        PacketSNR = pkt_status.snr_pkt_in_db;                //read the received SNR value
         //offset = LT.getFrequencyErrorRegValue();
+        Serial.println("Packet stats------");
+        Serial.printf("RSSI: %d, SNR: %d \n", PacketRSSI, PacketSNR);
+        Serial.println("---------------------");
 
-        Serial.println(PacketRSSI);
-        Serial.println(PacketSNR);
+        uint8_t data[256];
 
-        //uint8_t data[256];
+        RXPacketL = readbufferLR1110(data, RXBUFFER_SIZE);
 
-        //RXPacketL = readbufferLR1110(data, RXBUFFER_SIZE);
-        //RXPacketL = 42;
-
-        //xTaskCreate(&blinky, "blinky", 512,NULL,5,NULL);
-
-        /*
+        xTaskCreate(&blinky, "blinky", 512,NULL,5,NULL);
+        
         packetsRX++;
         lastPacket = y%100;
         packets[lastPacket] = RXPacketL;
         packetsCount++;
         y++;
+        /*
         // Check if we got a special Realtime Packet
         // 0x73 = Midi Stream
         if(data[2] == 0x73){
@@ -448,7 +414,7 @@ void rxTaskLR1110(void* p)
             midiarray[i] = tmpmidi;
           }
         }
-
+        */
         if(RXPacketL > 0) {
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
             if (!sdCardPresent)
@@ -463,21 +429,25 @@ void rxTaskLR1110(void* p)
           data[0] = RXPacketL;
           udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
         }
-        */
+        
       }
 
       if (IRQStatus & LR1110_SYSTEM_IRQ_CRC_ERROR) {
+        //Serial.println("LR1110_SYSTEM_IRQ_CRC_ERROR");
         crc++;
       } 
       if (IRQStatus & LR1110_SYSTEM_IRQ_HEADER_ERROR) {
+        //Serial.println("LR1110_SYSTEM_IRQ_HEADER_ERROR");
         header++;
       }
+      /*
       if(IRQStatus & LR1110_SYSTEM_IRQ_PREAMBLE_DETECTED)
       {
         Serial.println("LR1110_SYSTEM_IRQ_PREAMBLE_DETECTED");
-      }
+      }*/
 
       lr1110_radio_set_rx( &lrRadio, 0);
+      Serial.println("Set Radio back to RX");
     }
   }
 }
