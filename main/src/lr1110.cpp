@@ -115,11 +115,11 @@ extern "C" void getPacketStats(int8_t* rssi, int8_t* snr, int8_t* ssnr)
 
 class mycallback : public carousel::callback {
   void fileComplete( const std::string &path ) {
-    // Serial.printf("new file path: %s\n", path.c_str());
+    Serial.printf("new file path: %s\n", path.c_str());
     strcpy(filename, path.c_str());
   }
 	void processFile(unsigned int index, unsigned int count) {
-    // Serial.printf("file progress: %d of %d packets\n", index, count);
+    Serial.printf("file progress: %d of %d packets\n", index, count);
     filepacket = index;
     filepackets = count;
   }
@@ -130,7 +130,7 @@ class mycallback : public carousel::callback {
  */
 IRAM_ATTR void rx1110ISR()
 {
-  Serial.println("DIO1");
+  //Serial.println("DIO1");
   xTaskNotify(rxTaskHandle, 0x0, eSetBits);
 }
 
@@ -230,14 +230,14 @@ void initLR1110()
       .preamble_len_in_symb = 20,                  //!< LoRa Preamble length [symbols]
       .header_type = LR1110_RADIO_LORA_PKT_IMPLICIT, //!< LoRa Header type configuration
       .pld_len_in_bytes = 255,                        //!< LoRa Payload length [bytes]
-      .crc = LR1110_RADIO_LORA_CRC_ON,               //!< LoRa CRC configuration
+      .crc = LR1110_RADIO_LORA_CRC_OFF,               //!< LoRa CRC configuration
       .iq = LR1110_RADIO_LORA_IQ_STANDARD,           //!< LoRa IQ configuration
   };
   lr1110_radio_set_lora_pkt_params(&lrRadio, &pkt_params);
 
   // Set radio freq (3a)
-  lr1110_radio_set_rf_freq(&lrRadio, Frequency);
-  //lr1110_radio_set_rf_freq(&lrRadio, 868200000);
+  //lr1110_radio_set_rf_freq(&lrRadio, Frequency);
+  lr1110_radio_set_rf_freq(&lrRadio, 868000000);
 
   // SetPAConfig (4)
   const lr1110_radio_pa_cfg_t pa_cfg = {
@@ -337,18 +337,18 @@ uint8_t readbufferLR1110(uint8_t *rxbuffer, uint8_t size)
   lr1110_radio_rx_buffer_status_t bufferStatus;
   lr1110_radio_get_rx_buffer_status(&lrRadio, &bufferStatus);
 
-  _RXPacketL = bufferStatus.pld_len_in_bytes;
+  RXPacketL = bufferStatus.pld_len_in_bytes;
   RXstart = bufferStatus.buffer_start_pointer;
 
   // read rxbuffer over SPI afap
   uint8_t buffer[255] = {0};
 
-  lr1110_regmem_read_buffer8(&lrRadio, buffer, RXstart, _RXPacketL);
+  lr1110_regmem_read_buffer8(&lrRadio, buffer, RXstart, RXPacketL);
 
   Serial.printf("RX Buffer (len: %i, offset: %i): \n", RXPacketL, RXstart);
   Serial.println((char*)buffer);
 
-  return _RXPacketL;
+  return RXPacketL;
 }
 
 /**
@@ -361,12 +361,12 @@ void rxTaskLR1110(void* p)
   while(1) {
     if (xTaskNotifyWait(0, 0, &mask, portMAX_DELAY))
     {
-      Serial.println("rxTask triggered");
+      //Serial.println("rxTask triggered");
 
       lr1110_system_get_and_clear_irq_status(&lrRadio, &IRQStatus);
       //lr1110_system_clear_irq_status(&lrRadio, LR1110_SYSTEM_IRQ_ALL_MASK | 0x14 | 0x15);
       
-      Serial.println(IRQStatus);
+      //Serial.println(IRQStatus);
       if(IRQStatus == 0x0) continue;
       if(IRQStatus & LR1110_SYSTEM_IRQ_RX_DONE) {
         Serial.println("GOT A PACKET WOOHOO!");
@@ -416,6 +416,7 @@ void rxTaskLR1110(void* p)
         }
         */
         if(RXPacketL > 0) {
+          Serial.println("Consume data check");
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
             if (!sdCardPresent)
             {
@@ -423,6 +424,7 @@ void rxTaskLR1110(void* p)
                 data_carousel.consume(data, RXPacketL);
               portEXIT_CRITICAL(&sxMux);
             } else {
+              Serial.println("consume Data");
               data_carousel.consume(data, RXPacketL);
             }
           }
@@ -433,11 +435,11 @@ void rxTaskLR1110(void* p)
       }
 
       if (IRQStatus & LR1110_SYSTEM_IRQ_CRC_ERROR) {
-        //Serial.println("LR1110_SYSTEM_IRQ_CRC_ERROR");
+        Serial.println("LR1110_SYSTEM_IRQ_CRC_ERROR");
         crc++;
       } 
       if (IRQStatus & LR1110_SYSTEM_IRQ_HEADER_ERROR) {
-        //Serial.println("LR1110_SYSTEM_IRQ_HEADER_ERROR");
+        Serial.println("LR1110_SYSTEM_IRQ_HEADER_ERROR");
         header++;
       }
       /*
@@ -447,7 +449,7 @@ void rxTaskLR1110(void* p)
       }*/
 
       lr1110_radio_set_rx( &lrRadio, 0);
-      Serial.println("Set Radio back to RX");
+      //Serial.println("Set Radio back to RX");
     }
   }
 }
