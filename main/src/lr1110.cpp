@@ -228,9 +228,9 @@ void initLR1110()
   // SetPacketParams (3)
   const lr1110_radio_pkt_params_lora_t pkt_params = {
       .preamble_len_in_symb = 20,                  //!< LoRa Preamble length [symbols]
-      .header_type = LR1110_RADIO_LORA_PKT_IMPLICIT, //!< LoRa Header type configuration
+      .header_type = LR1110_RADIO_LORA_PKT_EXPLICIT, //!< LoRa Header type configuration
       .pld_len_in_bytes = 255,                        //!< LoRa Payload length [bytes]
-      .crc = LR1110_RADIO_LORA_CRC_OFF,               //!< LoRa CRC configuration
+      .crc = LR1110_RADIO_LORA_CRC_ON,               //!< LoRa CRC configuration
       .iq = LR1110_RADIO_LORA_IQ_STANDARD,           //!< LoRa IQ configuration
   };
   lr1110_radio_set_lora_pkt_params(&lrRadio, &pkt_params);
@@ -310,7 +310,7 @@ extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_
 uint8_t readbufferLR1110(uint8_t *rxbuffer, uint8_t size)
 {
   uint8_t RXstart;
-  uint8_t _RXPacketL = 0;
+  uint8_t RXPacketL = 0;
   uint32_t regdata;
 
   /*
@@ -336,17 +336,17 @@ uint8_t readbufferLR1110(uint8_t *rxbuffer, uint8_t size)
   // get rx buffer size to read
   lr1110_radio_rx_buffer_status_t bufferStatus;
   lr1110_radio_get_rx_buffer_status(&lrRadio, &bufferStatus);
+  
+  Serial.printf("RX Buffer (len: %i, offset: %i): \n", bufferStatus.pld_len_in_bytes, bufferStatus.buffer_start_pointer);
 
   RXPacketL = bufferStatus.pld_len_in_bytes;
   RXstart = bufferStatus.buffer_start_pointer;
 
+  //uint8_t buffer[256];
   // read rxbuffer over SPI afap
-  uint8_t buffer[255] = {0};
-
-  lr1110_regmem_read_buffer8(&lrRadio, buffer, RXstart, RXPacketL);
-
-  Serial.printf("RX Buffer (len: %i, offset: %i): \n", RXPacketL, RXstart);
-  Serial.println((char*)buffer);
+  lr1110_regmem_read_buffer8(&lrRadio, rxbuffer, RXstart, RXPacketL);
+  
+  Serial.println((char*)rxbuffer);
 
   return RXPacketL;
 }
@@ -384,6 +384,11 @@ void rxTaskLR1110(void* p)
         uint8_t data[256];
 
         RXPacketL = readbufferLR1110(data, RXBUFFER_SIZE);
+
+        Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
+        Serial.println((char*)data);
+
+        udp.writeTo(data, RXPacketL, IPAddress(192,168,0,197), 8282);
 
         xTaskCreate(&blinky, "blinky", 512,NULL,5,NULL);
         
@@ -429,7 +434,8 @@ void rxTaskLR1110(void* p)
             }
           }
           data[0] = RXPacketL;
-          udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
+          //udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
+          //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,197), 8280);
         }
         
       }
