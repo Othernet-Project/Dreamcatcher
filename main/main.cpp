@@ -13,7 +13,8 @@
 #include "wifi.h"
 
 #if LORA_USE_LR1110
-  #include "lr1110.h"
+  //#include "lr1110.h"
+  #include "lr11xx.h"
 #else
   #include "sx1280.h"
 #endif
@@ -88,7 +89,7 @@ void setup()
   if (LORA_USE_LR1110)
   {
     Serial.println("LR1110 is used");
-    xTaskCreate(rxTaskLR1110, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
+    xTaskCreate(rxTaskLR11xx, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
     //xTaskCreate(dio1IrqTask, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
   } else {
     Serial.println("SX1280 is used");
@@ -110,8 +111,8 @@ void setup()
   if (LORA_USE_LR1110)
   {
     Serial.println("init LR1110");
-    initLR1110();
-    getLR1110Info();
+    initLR11xx();
+    getLR11xxInfo();
   } else {
     Serial.println("init SX1280");
     initSX1280();
