@@ -13,7 +13,6 @@
 #include "wifi.h"
 
 #if LORA_USE_LR1110
-  //#include "lr1110.h"
   #include "lr11xx.h"
 #else
   #include "sx1280.h"
@@ -96,7 +95,7 @@ void setup()
     xTaskCreate(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
   }
 #else
-  xTaskCreatePinnedToCore(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle, 1); // stack size may be increased to receive bigger files
+  //xTaskCreatePinnedToCore(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle, 1); // stack size may be increased to receive bigger files
 #endif
 
   gpio_set_direction(LO_DATA, GPIO_MODE_OUTPUT);

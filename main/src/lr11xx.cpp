@@ -51,7 +51,7 @@ static uint8_t lastPacket;
 static uint8_t packets[100] = {0};
 static uint8_t y = 0;
 
-#define BLINK_PIN    GPIO_NUM_34
+#define BLINK_PIN    GPIO_NUM_15
 
 bool loraReady;                           // variable to display LoRa fault with led or on website
 
@@ -152,7 +152,7 @@ IRAM_ATTR void busyIRQ()
  */
 void initLR11xx()
 {
-  init_gpio();
+  //init_gpio();
 
   lr11xx_system_stat1_t lrStat1;
   lr11xx_system_stat2_t lrStat2;
@@ -170,6 +170,7 @@ void initLR11xx()
 
   //attachInterrupt(DIO1, rx1110ISR, RISING);
 
+  Serial.println("Init SPI for LR11xx");
   spi1110 = new SPIClass(FSPI);
   spi1110->begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
   lrRadio.spi = spi1110;
@@ -179,12 +180,15 @@ void initLR11xx()
 
   //------------------------------------------------------
 
+  Serial.println("Reset and reboot LR11xx");
+
   lr11xx_system_reset(&lrRadio);
   delay(220);
   lr11xx_system_reboot(&lrRadio, false);
 
   delay(100);
-
+  
+  Serial.print("Set regs LR11xx");
   lr11xx_system_set_reg_mode(&lrRadio, LR11XX_SYSTEM_REG_MODE_DCDC);
 
   lr11xx_system_get_status(&lrRadio, &lrStat1, &lrStat2, &lrIrq_status);
@@ -220,14 +224,14 @@ void initLR11xx()
   //mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
 
   mod_params.sf = (lr11xx_radio_lora_sf_t)LR11XX_RADIO_LORA_SF9;
-  mod_params.bw = (lr11xx_radio_lora_bw_t)LR11XX_RADIO_LORA_BW_250;
+  mod_params.bw = (lr11xx_radio_lora_bw_t)LR11XX_RADIO_LORA_BW_200;
   mod_params.cr = (lr11xx_radio_lora_cr_t)LR11XX_RADIO_LORA_CR_4_5;
 
   lr11xx_radio_set_lora_mod_params(&lrRadio, &mod_params);
 
   // SetPacketParams (3)
   const lr11xx_radio_pkt_params_lora_t pkt_params = {
-      .preamble_len_in_symb = 20,                  //!< LoRa Preamble length [symbols]
+      .preamble_len_in_symb = 0x23,                  //!< LoRa Preamble length [symbols]
       .header_type = LR11XX_RADIO_LORA_PKT_EXPLICIT, //!< LoRa Header type configuration
       .pld_len_in_bytes = 255,                        //!< LoRa Payload length [bytes]
       .crc = LR11XX_RADIO_LORA_CRC_ON,               //!< LoRa CRC configuration
@@ -236,8 +240,9 @@ void initLR11xx()
   lr11xx_radio_set_lora_pkt_params(&lrRadio, &pkt_params);
 
   // Set radio freq (3a)
-  //lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
-  lr11xx_radio_set_rf_freq(&lrRadio, 868000000);
+  lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
+  //lr11xx_radio_set_rf_freq(&lrRadio, 868000000);
+  //lr11xx_radio_set_rf_freq(&lrRadio, 2403000000);
 
   // SetPAConfig (4)
   const lr11xx_radio_pa_cfg_t pa_cfg = {
@@ -290,13 +295,9 @@ extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_
   Bandwidth = bw;
   CodeRate = cr;
   lr11xx_radio_mod_params_lora_t mod_params;
-  //mod_params.sf = (lr11xx_radio_lora_sf_t)SpreadingFactor;
-  //mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
-  //mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
-
-  mod_params.sf = (lr11xx_radio_lora_sf_t)LR11XX_RADIO_LORA_SF9;
-  mod_params.bw = (lr11xx_radio_lora_bw_t)LR11XX_RADIO_LORA_BW_250;
-  mod_params.cr = (lr11xx_radio_lora_cr_t)LR11XX_RADIO_LORA_CR_4_5;
+  mod_params.sf = (lr11xx_radio_lora_sf_t)SpreadingFactor;
+  mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
+  mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
 
   lr11xx_radio_set_lora_mod_params(&lrRadio, &mod_params);
   lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
