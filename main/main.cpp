@@ -26,7 +26,7 @@ xTaskHandle rxTaskHandle = NULL;
 xQueueHandle rxQueue = NULL;
 
 static uint64_t lastUpdate = 0;
-uint16_t bitrate = 0;
+uint32_t bitrate = 0;
 
 static bool bWire;
 bool sdCardPresent;
@@ -40,21 +40,23 @@ void loop()
   if (update >= 1000)
   {
     lastUpdate = millis();
-    //bitrate = countBitrate(update);
-    //if(bWire) lnbStatus();
-    //vTaskGetRunTimeStats2();
+    bitrate = countBitrate(update);
+    if(bWire) lnbStatus();
+    vTaskGetRunTimeStats2();
     //Serial.println("Alive...");
     Serial.printf("Alive... DIO1: %i \n", digitalRead(DIO1));
-    // heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
+    //heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
 
+    //lrSendData();
   }
-
+  /*
   if (resetStart + 5000 < millis() && !defaultsPin)
   {
     defaultsPin = 1;
     Serial.print("Reset to defaults ");
     setDefaults();
   }
+  */
   
   delay(10);
 }
@@ -67,10 +69,38 @@ IRAM_ATTR void tpsFault()
 void setup()
 {
   Serial.begin(115200);
+  Serial.println("Starting Setup...");
+
+  // enable RF section
+  gpio_reset_pin((gpio_num_t)RF_PWR);
+  gpio_set_direction((gpio_num_t)RF_PWR, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)RF_PWR, 1);
+
+  /*// switch over subghz
+  gpio_reset_pin((gpio_num_t)RF_SW_SMA1);
+  gpio_set_direction((gpio_num_t)RF_SW_SMA1, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)RF_SW_SMA1, 1);
+
+  // switch over subghz
+  gpio_reset_pin((gpio_num_t)RF_SW_SMA2);
+  gpio_set_direction((gpio_num_t)RF_SW_SMA2, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)RF_SW_SMA2, 0);
+
+  // switch over SMA/F
+  gpio_reset_pin((gpio_num_t)RF_SW_SUBG1);
+  gpio_set_direction((gpio_num_t)RF_SW_SUBG1, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)RF_SW_SUBG1, 1);
+
+  // switch over SMA/F
+  gpio_reset_pin((gpio_num_t)RF_SW_SUBG2);
+  gpio_set_direction((gpio_num_t)RF_SW_SUBG2, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)RF_SW_SUBG2, 0);
+*/
   bWire = Wire.begin(I2C_SDA, I2C_SCL);
   vTaskPrioritySet(NULL, 5);
   loadSettings();
 
+  Serial.println("SD Cards next");
   sdCardPresent = true;
   if(initSDcard() != ESP_OK) {
     sdCardPresent = false;
@@ -79,24 +109,21 @@ void setup()
       log_e("error to init sd card and spiffs storage");
     }
   }
+  
   if(bWire) enableLNB(); // enable VLNB
   enable22kHz(bEnableDiseq);   // switch LNB to high band if needed
-  enableLO(bEnableLO, uLOid);  // if neccessary, enable local oscillator
+  //enableLO(bEnableLO, uLOid);  // if neccessary, enable local oscillator
   
   rxQueue = xQueueCreate(QUEUE_LENGTH, RXBUFFER_SIZE);
-#ifdef CONFIG_IDF_TARGET_ESP32S2
   if (LORA_USE_LR1110)
   {
     Serial.println("LR1110 is used");
-    xTaskCreate(rxTaskLR11xx, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
+    xTaskCreate(rxTaskLR11xx, "RX_T", 16 * 1024, NULL, 6, &rxTaskHandle);
     //xTaskCreate(dio1IrqTask, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle);
   } else {
     Serial.println("SX1280 is used");
-    xTaskCreate(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
+    xTaskCreate(rxTaskSX1280, "RX_T", 16 * 1024, NULL, 6, &rxTaskHandle); // stack size may be increased to receive bigger files
   }
-#else
-  //xTaskCreatePinnedToCore(rxTaskSX1280, "RX_T", 10 * 1024, NULL, 6, &rxTaskHandle, 1); // stack size may be increased to receive bigger files
-#endif
 
   gpio_set_direction(LO_DATA, GPIO_MODE_OUTPUT);
   gpio_set_direction(TPS_EXTM, GPIO_MODE_OUTPUT);

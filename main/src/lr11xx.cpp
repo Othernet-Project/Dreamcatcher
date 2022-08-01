@@ -51,8 +51,6 @@ static uint8_t lastPacket;
 static uint8_t packets[100] = {0};
 static uint8_t y = 0;
 
-#define BLINK_PIN    GPIO_NUM_15
-
 bool loraReady;                           // variable to display LoRa fault with led or on website
 
 struct midi_data {
@@ -66,17 +64,69 @@ struct midi_data midiarray[32];
 uint8_t firstnote = 0;
 char* txtarray;
 
+uint32_t midiNoteToFreq(uint8_t note){
+    return pow(2, ((note - 69) / 12)) * 440;
+}
+
 void init_gpio(void) {
-  gpio_reset_pin(BLINK_PIN);
-  gpio_set_direction(BLINK_PIN, GPIO_MODE_OUTPUT);
-  gpio_set_level(BLINK_PIN, 0);
+  gpio_reset_pin((gpio_num_t)LED_PIN);
+  gpio_set_direction((gpio_num_t)LED_PIN, GPIO_MODE_OUTPUT);
+  gpio_set_level((gpio_num_t)LED_PIN, 0);
+
+  //pinMode(BUZ_PIN, OUTPUT);
+
+  
+  ledcSetup(0, 5000, 8);
+  ledcAttachPin(BUZ_PIN, 0);
+
+  /*
+  ledcWriteNote(0, NOTE_C, 4);
+  delay(500);
+  ledcWrite(0, 127);
+  delay(500);
+  ledcWrite(0, 64);
+  delay(500);
+  ledcWrite(0, 32);
+  delay(500);
+  ledcWrite(0, 16);
+  delay(500);
+  ledcWrite(0, 8);
+
+  ledcWriteNote(0, NOTE_D, 4);
+  delay(500);
+  
+  ledcWriteNote(0, NOTE_E, 4);
+  delay(500);
+
+  ledcWriteNote(0, NOTE_F, 4);
+  delay(500);
+  ledcWriteNote(0, NOTE_G, 4);
+  delay(500);
+  ledcWriteNote(0, NOTE_A, 4);
+  delay(500);
+  ledcWriteNote(0, NOTE_B, 4);
+  delay(500);
+  */
+  //ledcDetachPin(BUZ_PIN);
+
+};
+
+// send data out over LR1120
+void lrSendData()
+{
+  Serial.println("LR1120 doing a test TX!");
+
+  lr11xx_regmem_write_buffer8(&lrRadio, (uint8_t*)"A test Message from the LR dev kit", 200);
+  lr11xx_radio_set_tx(&lrRadio, 0);
 }
 
 void blinky(void *pvParameter)
 {
-  gpio_set_level(BLINK_PIN, 1);
-  vTaskDelay(50 / portTICK_RATE_MS); // sleep 500ms
-  gpio_set_level(BLINK_PIN, 0);
+  gpio_set_level((gpio_num_t)LED_PIN, 1);
+  //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
+  vTaskDelay(10 / portTICK_RATE_MS); // sleep 500ms
+  gpio_set_level((gpio_num_t)LED_PIN, 0);
+  //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
   vTaskDelete(NULL);
 }
 
@@ -115,6 +165,7 @@ extern "C" void getPacketStats(int8_t* rssi, int8_t* snr, int8_t* ssnr)
 
 class mycallback : public carousel::callback {
   void fileComplete( const std::string &path ) {
+    Serial.println("--- File Complete ---");
     Serial.printf("new file path: %s\n", path.c_str());
     strcpy(filename, path.c_str());
   }
@@ -137,7 +188,7 @@ IRAM_ATTR void rx1110ISR()
 IRAM_ATTR void busyIRQ()
 {
   //Serial.print("irq on busy, level: ");
-  //Serial.println(digitalRead(33));
+  //Serial.println(digitalRead(RFBUSY));
 }
 
 /**
@@ -152,7 +203,7 @@ IRAM_ATTR void busyIRQ()
  */
 void initLR11xx()
 {
-  //init_gpio();
+  init_gpio();
 
   lr11xx_system_stat1_t lrStat1;
   lr11xx_system_stat2_t lrStat2;
@@ -171,7 +222,7 @@ void initLR11xx()
   //attachInterrupt(DIO1, rx1110ISR, RISING);
 
   Serial.println("Init SPI for LR11xx");
-  spi1110 = new SPIClass(FSPI);
+  spi1110 = new SPIClass(HSPI);
   spi1110->begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_NSS);
   lrRadio.spi = spi1110;
 
@@ -194,6 +245,17 @@ void initLR11xx()
   lr11xx_system_get_status(&lrRadio, &lrStat1, &lrStat2, &lrIrq_status);
   Serial.print("DCDC Stat1: ");
   Serial.println(lrStat1.command_status);
+/*
+  // SET RF Switches
+  const lr11xx_system_rfswitch_cfg_t rfsw_cfg = {
+    .enable = LR11XX_SYSTEM_RFSW0_HIGH,
+    .standby = LR11XX_SYSTEM_RFSW0_HIGH,
+    .rx = LR11XX_SYSTEM_RFSW0_HIGH,
+    .tx = LR11XX_SYSTEM_RFSW0_HIGH | LR11XX_SYSTEM_RFSW1_HIGH,
+    .tx_hp = LR11XX_SYSTEM_RFSW1_HIGH,
+  };
+  lr11xx_system_set_dio_as_rf_switch(&lrRadio, &rfsw_cfg);
+*/
   //lr11xx_system_set_tcxo_mode(&lrRadio, lr11xx_SYSTEM_TCXO_CTRL_3_0V, 0x70);
   lr11xx_system_set_tcxo_mode(&lrRadio, LR11XX_SYSTEM_TCXO_CTRL_1_8V, 0x70);
   
@@ -219,13 +281,13 @@ void initLR11xx()
 
   // SetModulationParams (2)
   lr11xx_radio_mod_params_lora_t mod_params;
-  //mod_params.sf = (lr11xx_radio_lora_sf_t)SpreadingFactor;
-  //mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
-  //mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
+  mod_params.sf = (lr11xx_radio_lora_sf_t)SpreadingFactor;
+  mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
+  mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
 
-  mod_params.sf = (lr11xx_radio_lora_sf_t)LR11XX_RADIO_LORA_SF9;
-  mod_params.bw = (lr11xx_radio_lora_bw_t)LR11XX_RADIO_LORA_BW_200;
-  mod_params.cr = (lr11xx_radio_lora_cr_t)LR11XX_RADIO_LORA_CR_4_5;
+  //mod_params.sf = (lr11xx_radio_lora_sf_t)LR11XX_RADIO_LORA_SF9;
+  //mod_params.bw = (lr11xx_radio_lora_bw_t)LR11XX_RADIO_LORA_BW_200;
+  //mod_params.cr = (lr11xx_radio_lora_cr_t)LR11XX_RADIO_LORA_CR_4_5;
 
   lr11xx_radio_set_lora_mod_params(&lrRadio, &mod_params);
 
@@ -241,9 +303,7 @@ void initLR11xx()
 
   // Set radio freq (3a)
   lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
-  //lr11xx_radio_set_rf_freq(&lrRadio, 868000000);
-  //lr11xx_radio_set_rf_freq(&lrRadio, 2403000000);
-
+  
   // SetPAConfig (4)
   const lr11xx_radio_pa_cfg_t pa_cfg = {
       .pa_sel = LR11XX_RADIO_PA_SEL_LP,                 //!< Power Amplifier selection
@@ -359,16 +419,19 @@ uint8_t readbufferlr11xx(uint8_t *rxbuffer, uint8_t size)
 void rxTaskLR11xx(void* p)
 {
   static uint32_t mask = 0;
-  data_carousel.init("/files/tmp", new mycallback());
+  data_carousel.init("/files/TMP", new mycallback());
+  float lastMidiStart = 0;
   while(1) {
     if (xTaskNotifyWait(0, 0, &mask, portMAX_DELAY))
     {
       //Serial.println("rxTask triggered");
 
       lr11xx_system_get_and_clear_irq_status(&lrRadio, &IRQStatus);
-      
-      Serial.println(IRQStatus);
+
       if(IRQStatus == 0x0) continue;
+      if(IRQStatus & LR11XX_SYSTEM_IRQ_TX_DONE){
+        Serial.println("TX was done on LR!");
+      }
       if(IRQStatus & LR11XX_SYSTEM_IRQ_RX_DONE) {
         Serial.println("GOT A PACKET WOOHOO!");
 
@@ -386,22 +449,23 @@ void rxTaskLR11xx(void* p)
 
         RXPacketL = readbufferlr11xx(data, RXBUFFER_SIZE);
 
-        Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
-        Serial.println((char*)data);
+        //Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
+        //Serial.println((char*)data);
 
-        udp.writeTo(data, RXPacketL, IPAddress(192,168,0,197), 8282);
+        udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
 
-        xTaskCreate(&blinky, "blinky", 512,NULL,5,NULL);
+        xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
         
         packetsRX++;
         lastPacket = y%100;
         packets[lastPacket] = RXPacketL;
         packetsCount++;
         y++;
-        /*
+        
         // Check if we got a special Realtime Packet
-        // 0x73 = Midi Stream
+        //0x73 = Midi Stream
         if(data[2] == 0x73){
+          Serial.println("--- Got a MIDI Packet ---");
           udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
           uint8_t midibuf[10] = {0};
           int chunks = floor((RXPacketL-8)/10);
@@ -418,9 +482,13 @@ void rxTaskLR11xx(void* p)
             memcpy(&tmpmidi.velocity, midibuf+5, 1);
             memcpy(&tmpmidi.duration, midibuf+6, 4);
             midiarray[i] = tmpmidi;
+
+            // play midi on speaker
+            //ledcWriteTone(0, midiNoteToFreq(tmpmidi.note));
+            //delay(tmpmidi.duration*1000+tmpmidi.start);
           }
         }
-        */
+      
         if(RXPacketL > 0) {
           Serial.println("Consume data check");
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
@@ -435,18 +503,16 @@ void rxTaskLR11xx(void* p)
             }
           }
           data[0] = RXPacketL;
-          //udp.writeTo(data, RXPacketL, IPAddress(239,1,2,3), 8280);
-          //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,197), 8280);
         }
         
       }
 
       if (IRQStatus & LR11XX_SYSTEM_IRQ_CRC_ERROR) {
-        Serial.println("lr11xx_SYSTEM_IRQ_CRC_ERROR");
+        //Serial.println("lr11xx_SYSTEM_IRQ_CRC_ERROR");
         crc++;
       } 
       if (IRQStatus & LR11XX_SYSTEM_IRQ_HEADER_ERROR) {
-        Serial.println("lr11xx_SYSTEM_IRQ_HEADER_ERROR");
+        //Serial.println("lr11xx_SYSTEM_IRQ_HEADER_ERROR");
         header++;
       }
       
@@ -456,7 +522,7 @@ void rxTaskLR11xx(void* p)
       }*/
 
       lr11xx_radio_set_rx( &lrRadio, 0);
-      Serial.println("Set Radio back to RX");
+      //Serial.println("Set Radio back to RX");
     }
   }
 }
@@ -482,7 +548,7 @@ uint16_t countBitrate(uint16_t update)
     packetsCount--;
   } while (packetsCount > 0);
 
-  log_d("bitrate: %d bits/s\n", bitrate * 8 * 1000/update);
+  Serial.printf("bitrate: %d bits/s\n", bitrate * 8 * 1000/update);
 
   return bitrate * 8 * 1000/update; // bitrate in bits/s
 }

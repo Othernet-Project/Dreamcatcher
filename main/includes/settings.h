@@ -59,6 +59,8 @@ IRAM_ATTR void rxTaskSX1280(void* p);
 IRAM_ATTR uint8_t readbufferSX1280(uint8_t *rxbuffer, uint8_t size);
 IRAM_ATTR void rxTxISR();
 
+void lrSendData();
+
 void loadSettings();
 void storeLoraSettings();
 void storeWifiCredsAP(char* ssid, char* pass);

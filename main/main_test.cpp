@@ -1,4 +1,3 @@
-
 #include <driver/sdmmc_defs.h>
 #include <driver/sdspi_host.h>
 #include <driver/sdmmc_types.h>
@@ -11,14 +10,18 @@
 #include "diskio.h"
 #include "sd_diskio.h"
 #include <fcntl.h>
-#include "settings.h"
 #include <sys/unistd.h>
 #include <dirent.h>
 #include "SPIFFS.h"
 
+#define SD_MISO  (gpio_num_t)37
+#define SD_MOSI  (gpio_num_t)39
+#define SD_SCK   (gpio_num_t)38
+#define SD_CS    (gpio_num_t)40
+
 static char VFS_MOUNT[] = "/files";
-uint8_t pdrv;
 uint32_t _blocks;
+uint8_t pdrv;
 struct dirent *entry;
 struct stat entry_stat;
 static size_t spiffstotal = 0, spiffsused = 0;
@@ -87,120 +90,39 @@ esp_err_t initSDcard()
         log_i("[FS] SD will be used for persistent storage.");
         mkdir("/files/tmp", 0755);
         pdrv = fs->pdrv;
+
+        // testing open command
+        int openRt = open( "/files/ilikeplanes", O_CREAT | O_TRUNC | O_RDWR, S_IRUSR | S_IWUSR );
+        write(openRt, "This is a test file", 19);
+        close(openRt);
+        //creat( "/files/ilikebuts", 0755);
+        //fopen( "/files/vodka/ilikebigbuts", "w+" );
+        
+        Serial.print("Open cmd test: ");
+        Serial.println(openRt);
     }
 
     return err;
 }
 
-void cleanup()
-{
-    char entrypath[265] = "/files/";
-    DIR *dir = opendir(VFS_MOUNT);
 
-    if (!dir) {
-        return;
-    }
-    entry = readdir(dir);
-    
-    while (entry != NULL) {
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Testing ESP32 SD card with vfs and POSIX");
 
-        if(strncmp("tmp/", entry->d_name, 4) == 0)
-        {
-            strcpy(entrypath + 7, entry->d_name);
-            unlink(entrypath);
-        }
+  Serial.print("ESP-IDF major");
+  Serial.println(ESP_IDF_VERSION_MAJOR);
+  Serial.print("ESP-IDF minor");
+  Serial.println(ESP_IDF_VERSION_MINOR);
+  Serial.print("ESP-IDF patch");
+  Serial.println(ESP_IDF_VERSION_PATCH);
 
-        entry = readdir(dir);
-    }
-    closedir(dir);
+  Serial.println("Testing..");
+  initSDcard();
+  Serial.println("done");
 }
 
-esp_err_t initSPIFFS()
-{
-    // if(!SPIFFS.begin(true, VFS_MOUNT)){
-    //     Serial.println("SPIFFS Mount Failed");
-    //     return ESP_FAIL;
-    // }
-    // return ESP_OK;
-
-
-    log_i("Initializing SPIFFS");
-
-    esp_vfs_spiffs_conf_t conf = {
-      .base_path = VFS_MOUNT,
-      .partition_label = "spiffs",
-      .max_files = 5,
-      .format_if_mount_failed = true
-    };
-
-    // Use settings defined above to initialize and mount SPIFFS filesystem.
-    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
-
-    if (ret != ESP_OK) {
-        if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        } else if (ret == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-        } else {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
-        }
-        return ret;
-    }
-
-    ret = esp_spiffs_info(conf.partition_label, &spiffstotal, &spiffsused);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
-    } else {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", spiffstotal, spiffsused);
-    }
-
-    cleanup();
-
-    return ret;
-}
-
-extern "C" esp_err_t formatSD()
-{
-    FRESULT res = FR_OK;
-    esp_err_t err = ESP_OK;
-    const size_t workbuf_size = 4096;
-    void *workbuf = NULL;
-    ESP_LOGW(TAG, "partitioning card");
-
-    workbuf = ff_memalloc(workbuf_size);
-    if (workbuf == NULL)
-    {
-        return ESP_ERR_NO_MEM;
-    }
-
-    DWORD plist[] = {100, 0, 0, 0};
-    res = f_fdisk(pdrv, plist, workbuf);
-    if (res != FR_OK)
-    {
-        err = ESP_FAIL;
-        ESP_LOGE(TAG, "f_fdisk failed (%d)", res);
-    }
-    else
-    {
-        size_t alloc_unit_size = 512;
-        ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-        res = f_mkfs("", FM_FAT, alloc_unit_size, workbuf, workbuf_size);
-        if (res != FR_OK)
-        {
-            err = ESP_FAIL;
-            ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
-        }
-    }
-    mkdir("/files/tmp", 0755); // add tmp folder
-
-    ESP_LOGW(TAG, "partitioning card finished");
-    free(workbuf);
-    return err;
-}
-
-extern "C" void getFreeStorageSPIFFS(uint64_t* total, uint64_t* used)
-{
-    *total = spiffstotal;
-    *used = spiffsused;
+void loop() {
+  // put your main code here, to run repeatedly:
+  
 }

@@ -585,7 +585,7 @@ static esp_err_t settings_handler(httpd_req_t *req)
     ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d, lnb => %d", _freq, _bw, _sf, _cr, bEnableLNB);
     enableLNB();
     enable22kHz(bDiseq);
-    enableLO(bLO, uLOid);
+    //enableLO(bLO, uLOid);
     updateLoraSettings(_freq, _bw, _sf, _cr);
 
     /* Respond with an empty chunk to signal HTTP response completion */
