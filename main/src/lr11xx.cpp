@@ -116,7 +116,11 @@ void lrSendData()
 {
   Serial.println("LR1120 doing a test TX!");
 
-  lr11xx_regmem_write_buffer8(&lrRadio, (uint8_t*)"A test Message from the LR dev kit", 200);
+  uint8_t msgData[224];
+  msgData[0] = 0x69;
+  memcpy(msgData+4, (uint8_t*)"A test Message from the TX DC2206", 34);  
+
+  lr11xx_regmem_write_buffer8(&lrRadio, msgData, 224);
   lr11xx_radio_set_tx(&lrRadio, 0);
 }
 
@@ -124,7 +128,7 @@ void blinky(void *pvParameter)
 {
   gpio_set_level((gpio_num_t)LED_PIN, 1);
   //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
-  vTaskDelay(10 / portTICK_RATE_MS); // sleep 500ms
+  vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
   gpio_set_level((gpio_num_t)LED_PIN, 0);
   //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
   vTaskDelete(NULL);
@@ -431,6 +435,17 @@ void rxTaskLR11xx(void* p)
       if(IRQStatus == 0x0) continue;
       if(IRQStatus & LR11XX_SYSTEM_IRQ_TX_DONE){
         Serial.println("TX was done on LR!");
+        gpio_set_level((gpio_num_t)LED_PIN, 1);
+        vTaskDelay(50 / portTICK_RATE_MS); // sleep 100ms
+        gpio_set_level((gpio_num_t)LED_PIN, 0);
+        vTaskDelay(100 / portTICK_RATE_MS); // sleep 100ms
+        gpio_set_level((gpio_num_t)LED_PIN, 1);
+        vTaskDelay(50 / portTICK_RATE_MS); // sleep 100ms
+        gpio_set_level((gpio_num_t)LED_PIN, 0);
+        vTaskDelay(100 / portTICK_RATE_MS); // sleep 100ms
+        gpio_set_level((gpio_num_t)LED_PIN, 1);
+        vTaskDelay(50 / portTICK_RATE_MS); // sleep 100ms
+        gpio_set_level((gpio_num_t)LED_PIN, 0);
       }
       if(IRQStatus & LR11XX_SYSTEM_IRQ_RX_DONE) {
         Serial.println("GOT A PACKET WOOHOO!");
@@ -487,6 +502,11 @@ void rxTaskLR11xx(void* p)
             //ledcWriteTone(0, midiNoteToFreq(tmpmidi.note));
             //delay(tmpmidi.duration*1000+tmpmidi.start);
           }
+        }
+        //0x69 = Test/Chat Packet for Factory Testing
+        if(data[2] == 0x69){
+          Serial.println("--- Got a Test Packet ---");
+          Serial.println((char*)data+4);
         }
       
         if(RXPacketL > 0) {

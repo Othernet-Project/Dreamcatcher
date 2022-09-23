@@ -7,9 +7,9 @@
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet DC-LR"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
 #define DEFAULT_FREQUENCY 1932315000
-#define DEFAULT_BW LORA_BW_0200
-#define DEFAULT_SF LORA_SF9
-#define DEFAULT_CR LORA_CR_4_5
+#define DEFAULT_BW 0x0D
+#define DEFAULT_SF 0x09
+#define DEFAULT_CR 0x01
 
 #define LORA_USE_LR1110 true
 
