@@ -157,7 +157,7 @@ void vTaskGetRunTimeStats2( )
 
    /* Allocate a TaskStatus_t structure for each task.  An array could be
    allocated statically at compile time. */
-   pxTaskStatusArray = (TaskStatus_t *)heap_caps_calloc(uxArraySize, sizeof( TaskStatus_t ) ,MALLOC_CAP_SPIRAM);
+   pxTaskStatusArray = (TaskStatus_t *)heap_caps_calloc(uxArraySize, sizeof( TaskStatus_t ) ,MALLOC_CAP_INTERNAL);
 
    if( pxTaskStatusArray != NULL )
    {

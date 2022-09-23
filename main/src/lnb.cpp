@@ -105,7 +105,7 @@ void lnbStatus()
         voltage = 20.0;
         break;
     }
-    log_d("reg: %d, value: %d\n", 0x02, detectedLNB);
+    Serial.printf("reg: %d, value: %d\n", 0x02, detectedLNB);
     if(!detectedLNB && bEnableLNB) enableLNB();
   }
 }

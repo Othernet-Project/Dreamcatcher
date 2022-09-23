@@ -262,6 +262,7 @@ void initSX1280()
     LT.setRfFrequency(Frequency, _Offset);
     LT.setBufferBaseAddress(0, 0);
     LT.setModulationParams(SpreadingFactor, Bandwidth, CodeRate);
+    //for LoRa order is PreambleLength, HeaderType, PayloadLength, CRC, InvertIQ/chirp invert, not used, not used
     LT.setPacketParams(0x23, LORA_PACKET_VARIABLE_LENGTH, 255, LORA_CRC_ON, LORA_IQ_NORMAL, 0, 0);
     // LT.writeRegister(0x891, 0xC0);
     LT.writeRegister(0x925, 0x32);
