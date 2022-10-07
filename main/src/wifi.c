@@ -91,7 +91,7 @@ void wifi_init_softap(char* ssid, char* pass, uint8_t auth)
         .ap = {
             .ssid_len = strlen(ssid),
             .channel = 0,
-            .max_connection = 3,
+            .max_connection = 32,
             .authmode = auth
         },
     };

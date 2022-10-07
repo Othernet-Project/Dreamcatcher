@@ -35,15 +35,15 @@ esp_err_t initSDcard()
     sdmmc_card_t *sd_card;
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.flags = SDMMC_HOST_FLAG_SPI | SDMMC_HOST_FLAG_DEINIT_ARG | SDMMC_HOST_FLAG_1BIT;
-    //host.max_freq_khz = 10000;
+    host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
     sdspi_device_config_t sd_slot = SDSPI_DEVICE_CONFIG_DEFAULT(); // TODO
     sd_slot.gpio_cs = SD_CS;
     sd_slot.host_id = (spi_host_device_t)host.slot;
 
     esp_vfs_fat_sdmmc_mount_config_t sd_cfg = {
         .format_if_mount_failed = true,
-        .max_files = 10,
-        .allocation_unit_size = 4 * 1024};
+        .max_files = 16,
+        .allocation_unit_size = 16 * 1024};
 
     // on ESP32-S2, DMA channel must be the same as host id
     #define SPI_DMA_CHAN host.slot
@@ -89,6 +89,8 @@ esp_err_t initSDcard()
         pdrv = fs->pdrv;
     }
 
+    sdmmc_card_print_info(stdout, sd_card);
+
     return err;
 }
 
@@ -124,7 +126,7 @@ esp_err_t initSPIFFS()
     // return ESP_OK;
 
 
-    log_i("Initializing SPIFFS");
+    Serial.println("Initializing SPIFFS");
 
     esp_vfs_spiffs_conf_t conf = {
       .base_path = VFS_MOUNT,
@@ -139,20 +141,20 @@ esp_err_t initSPIFFS()
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+            Serial.println("Failed to mount or format filesystem");
         } else if (ret == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+            Serial.println("Failed to find SPIFFS partition");
         } else {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+            Serial.printf("Failed to initialize SPIFFS (%s) \n", esp_err_to_name(ret));
         }
         return ret;
     }
 
     ret = esp_spiffs_info(conf.partition_label, &spiffstotal, &spiffsused);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        Serial.printf("Failed to get SPIFFS partition information (%s) \n", esp_err_to_name(ret));
     } else {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", spiffstotal, spiffsused);
+        Serial.printf("Partition size: total: %d, used: %d \n", spiffstotal, spiffsused);
     }
 
     cleanup();

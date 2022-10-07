@@ -14,7 +14,7 @@
 #include <dirent.h>
 #include "SPIFFS.h"
 
-#define SD_MISO  (gpio_num_t)37
+#define SD_MISO  (gpio_num_t)10
 #define SD_MOSI  (gpio_num_t)39
 #define SD_SCK   (gpio_num_t)38
 #define SD_CS    (gpio_num_t)40

@@ -64,6 +64,8 @@ struct midi_data midiarray[32];
 uint8_t firstnote = 0;
 char* txtarray;
 
+static SemaphoreHandle_t blink_rx;
+
 uint32_t midiNoteToFreq(uint8_t note){
     return pow(2, ((note - 69) / 12)) * 440;
 }
@@ -126,12 +128,17 @@ void lrSendData()
 
 void blinky(void *pvParameter)
 {
-  gpio_set_level((gpio_num_t)LED_PIN, 1);
-  //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
-  vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
-  gpio_set_level((gpio_num_t)LED_PIN, 0);
-  //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
-  vTaskDelete(NULL);
+  while(1)
+    {
+        if( xSemaphoreTake( blink_rx, portMAX_DELAY ) == pdTRUE )
+        {
+          gpio_set_level((gpio_num_t)LED_PIN, 1);
+          //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
+          vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
+          gpio_set_level((gpio_num_t)LED_PIN, 0);
+          //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
+        }
+    }
 }
 
 /**
@@ -249,17 +256,17 @@ void initLR11xx()
   lr11xx_system_get_status(&lrRadio, &lrStat1, &lrStat2, &lrIrq_status);
   Serial.print("DCDC Stat1: ");
   Serial.println(lrStat1.command_status);
-/*
+
   // SET RF Switches
   const lr11xx_system_rfswitch_cfg_t rfsw_cfg = {
     .enable = LR11XX_SYSTEM_RFSW0_HIGH,
     .standby = LR11XX_SYSTEM_RFSW0_HIGH,
     .rx = LR11XX_SYSTEM_RFSW0_HIGH,
-    .tx = LR11XX_SYSTEM_RFSW0_HIGH | LR11XX_SYSTEM_RFSW1_HIGH,
-    .tx_hp = LR11XX_SYSTEM_RFSW1_HIGH,
+    .tx = LR11XX_SYSTEM_RFSW0_HIGH,
+    .tx_hp = LR11XX_SYSTEM_RFSW0_HIGH,
   };
   lr11xx_system_set_dio_as_rf_switch(&lrRadio, &rfsw_cfg);
-*/
+
   //lr11xx_system_set_tcxo_mode(&lrRadio, lr11xx_SYSTEM_TCXO_CTRL_3_0V, 0x70);
   lr11xx_system_set_tcxo_mode(&lrRadio, LR11XX_SYSTEM_TCXO_CTRL_1_8V, 0x70);
   
@@ -339,6 +346,9 @@ void initLR11xx()
   lr11xx_system_get_errors( &lrRadio, &lrErrors );
   Serial.print("lr11xx Errors: ");
   Serial.println(lrErrors);
+
+  blink_rx = xSemaphoreCreateBinary();
+  xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
 }
 
 /**
@@ -467,9 +477,10 @@ void rxTaskLR11xx(void* p)
         //Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
         //Serial.println((char*)data);
 
-        udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
+        //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
 
-        xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+        //xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+        xSemaphoreGive(blink_rx);
         
         packetsRX++;
         lastPacket = y%100;
@@ -481,7 +492,7 @@ void rxTaskLR11xx(void* p)
         //0x73 = Midi Stream
         if(data[2] == 0x73){
           Serial.println("--- Got a MIDI Packet ---");
-          udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
+          //udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
           uint8_t midibuf[10] = {0};
           int chunks = floor((RXPacketL-8)/10);
           //loop at data in 10byte chunks to parse Data

@@ -17,7 +17,7 @@
 
 
 //DC 2206 (LR based)
-#define SD_MISO  (gpio_num_t)37
+#define SD_MISO  (gpio_num_t)10
 #define SD_MOSI  (gpio_num_t)39
 #define SD_SCK   (gpio_num_t)38
 #define SD_CS    (gpio_num_t)40
@@ -38,7 +38,7 @@
 
 #define LO_DATA (gpio_num_t)18
 #define LO_CLK 41
-#define TPS_EXTM (gpio_num_t)35
+#define TPS_EXTM (gpio_num_t)45
 
 // other Pins
 #define LED_PIN 6
