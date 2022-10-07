@@ -62,7 +62,7 @@ extern void enable22kHz(bool en);
 extern void enableLO(bool en, uint8_t id);
 
 /* Scratch buffer size */
-#define SCRATCH_BUFSIZE  20*1024
+#define SCRATCH_BUFSIZE  32*1024
 
 struct web_server_data {
     /* Base path of file storage */
@@ -178,7 +178,7 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
             continue;
         }
         sprintf(entrysize, "%ld", entry_stat.st_size);
-        // ESP_LOGI(TAG, "Found %s : %s (%s bytes)", entrytype, entry->d_name, entrysize);
+        //ESP_LOGI(TAG, "Found %s : %s (%s bytes)", entrytype, entry->d_name, entrysize);
 
         strlcpy(_script + strlen(_script), ", ", 3);
         /* Send chunk of HTML file containing table entries with file name and size */
@@ -233,6 +233,8 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filena
     if (IS_FILE_EXT(filename, ".html")) {
         return httpd_resp_set_type(req, "text/html");
     } else if (IS_FILE_EXT(filename, ".jpeg")) {
+        return httpd_resp_set_type(req, "image/jpeg");
+    } else if (IS_FILE_EXT(filename, ".jpg")) {
         return httpd_resp_set_type(req, "image/jpeg");
     } else if (IS_FILE_EXT(filename, ".png")) {
         return httpd_resp_set_type(req, "image/png");
@@ -389,7 +391,7 @@ static void ws_async_send(void *arg)
 
 static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
 {
-    struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    struct async_resp_arg *resp_arg = heap_caps_malloc(sizeof(struct async_resp_arg), MALLOC_CAP_SPIRAM);
     resp_arg->hd = req->handle;
     resp_arg->fd = httpd_req_to_sockfd(req);
     return httpd_queue_work(handle, ws_async_send, resp_arg);
@@ -579,13 +581,15 @@ static esp_err_t settings_handler(httpd_req_t *req)
     int _sf = atoi(sf + 3);
     int _cr = atoi(cr + 3);
     extern bool bEnableLNB;
+    extern bool bEnableDiseq;
     bool bLO = strncmp(lo + 3, "true", 4) == 0;
-    bool bDiseq = strncmp(diseq + 6, "true", 4) == 0;
+    //bool bDiseq = strncmp(diseq + 6, "true", 4) == 0;
+    bEnableDiseq = strncmp(diseq + 6, "true", 4) == 0;
     bEnableLNB = strncmp(lnb + 4, "true", 4) == 0;
     ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d, lnb => %d", _freq, _bw, _sf, _cr, bEnableLNB);
     enableLNB();
-    enable22kHz(bDiseq);
-    enableLO(bLO, uLOid);
+    //enable22kHz(bDiseq);
+    //enableLO(bLO, uLOid);
     updateLoraSettings(_freq, _bw, _sf, _cr);
 
     /* Respond with an empty chunk to signal HTTP response completion */

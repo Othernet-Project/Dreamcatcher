@@ -46,10 +46,20 @@ extern AsyncUDP udp;
 void readMBR();
 esp_err_t initSDcard();
 esp_err_t initSPIFFS();
+void testStuff();
+void initLR1110();
+void getLR1110Info();
+void initLR11xx();
+void getLR11xxInfo();
 void initSX1280();
+IRAM_ATTR void rxTaskLR1110(void* p);
+IRAM_ATTR void rxTaskLR11xx(void* p);
+IRAM_ATTR void dio1IrqTask(void* p);
 IRAM_ATTR void rxTaskSX1280(void* p);
 IRAM_ATTR uint8_t readbufferSX1280(uint8_t *rxbuffer, uint8_t size);
 IRAM_ATTR void rxTxISR();
+
+void lrSendData();
 
 void loadSettings();
 void storeLoraSettings();

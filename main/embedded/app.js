@@ -221,6 +221,7 @@ function updateStats(jsnStats) {
     document.getElementById('stats_crc').innerText = jsnStats.crc;
     document.getElementById('stats_header').innerText = jsnStats.header;
     document.getElementById('stats_pkts').innerText = jsnStats.received;
+    document.getElementById('stats_bitrate').innerText = jsnStats.bitrate;
 
     const progress = jsnStats.packet / jsnStats.packets * 100;
     document.getElementById('stats_progress').innerText = Math.round(progress*100)/100 + '%';
@@ -240,9 +241,11 @@ function saveReceiver() {
     let sf = document.getElementById('rcv_sf').value;
     let cr = document.getElementById('rcv_cr').value;
     let lnb = document.getElementById('lnb_volt').checked;
-    let lo = document.getElementById('lo_en').checked;
+    //let lo = document.getElementById('lo_en').checked;
+    let lo = false;
     let diseq = document.getElementById('diseq').checked;
-    let loid = document.getElementById('rcv_loid').value;
+    //let loid = document.getElementById('rcv_loid').value;
+    let loid = 0;
 
     const http = new XMLHttpRequest();
     var params = 'freq=' + freq + '&bw=' + bw + '&sf=' + sf + '&cr=' + cr + '&lnb=' + lnb + '&lo=' + lo + '&diseq=' + diseq + '&loid=' + loid;
@@ -393,6 +396,11 @@ async function getText(filepath) {
         });
 }
 
+// get mp3 file and return it
+async function getMp3(filepath) {
+    return '<audio controls src="'+filepath+'" type="audio/mpeg">Your browser does not support the audio element.</audio>'
+}
+
 // get File and open it in the Viewer
 async function viewFile(filepath, fileExt) {
     document.getElementById('md_fileview_status').classList.add('loader');
@@ -408,6 +416,10 @@ async function viewFile(filepath, fileExt) {
     if (fileExt == 'txt' || fileExt == 'json' || fileExt == 'html') {
         console.log('Text File');
         result = await getText(filepath);
+    }
+    if (fileExt == 'mp3') {
+        console.log('MP3 File');
+        result = await getMp3(filepath);
     }
 
     // Set the iframe's new HTML
@@ -443,9 +455,9 @@ document.addEventListener('DOMContentLoaded', event => {
         document.getElementById('rcv_sf').value = init_sf;
         document.getElementById('rcv_cr').value = init_cr;
         document.getElementById('lnb_volt').checked = init_lnb;
-        document.getElementById('lo_en').checked = init_lo;
+        //document.getElementById('lo_en').checked = init_lo;
         document.getElementById('diseq').checked = init_diseq;
-        document.getElementById('rcv_loid').value = init_loid;
+        //document.getElementById('rcv_loid').value = init_loid;
     } catch (error) {}
 
     document.getElementById('volume').addEventListener("input", function (e) {

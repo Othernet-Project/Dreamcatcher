@@ -36,7 +36,7 @@
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
                         <a onclick="toggleModal('md_receiver')"class="navbar-item">Receiver</a>
-                        <a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>
+                        <!--<a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>-->
                     </div>
                 </div>
             </div>
@@ -131,7 +131,7 @@
                 </div>
             </div>
         </div>
-
+        <!--
         <div id="md_dcss" class="modal">
             <div class="modal-background"></div>
             <div class="modal-content">
@@ -170,6 +170,7 @@
                 </div>
             </div>
         </div>
+        -->
 
         <div id="md_receiver" class="modal">
             <div class="modal-background"></div>
@@ -188,10 +189,9 @@
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_bw">
-                                    <option value="52">LORA_BW_0200</option>
-                                    <option value="38">LORA_BW_0400</option>
-                                    <option value="24">LORA_BW_0800</option>
-                                    <option value="10">LORA_BW_1600</option>
+                                    <option value="13">LORA_BW_0200</option>
+                                    <option value="14">LORA_BW_0400</option>
+                                    <option value="15">LORA_BW_0800</option>
                                 </select>
                             </div>
                         </div>
@@ -202,14 +202,14 @@
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_sf">
-                                    <option value="80">LORA_SF5</option>
-                                    <option value="96">LORA_SF6</option>
-                                    <option value="112">LORA_SF7</option>
-                                    <option value="128">LORA_SF8</option>
-                                    <option value="144">LORA_SF9</option>
-                                    <option value="160">LORA_SF10</option>
-                                    <option value="176">LORA_SF11</option>
-                                    <option value="192">LORA_SF12</option>
+                                    <option value="5">LORA_SF5</option>
+                                    <option value="6">LORA_SF6</option>
+                                    <option value="7">LORA_SF7</option>
+                                    <option value="8">LORA_SF8</option>
+                                    <option value="9">LORA_SF9</option>
+                                    <option value="10">LORA_SF10</option>
+                                    <option value="11">LORA_SF11</option>
+                                    <option value="12">LORA_SF12</option>
                                 </select>
                             </div>
                         </div>
@@ -235,7 +235,8 @@
                             <input id="lnb_volt" class="checkbox" type="checkbox">
                         </div>
                     </div>
-
+                    
+                    <!--
                     <div class="field">
                         <label class="label">LO frequency (MHz)</label>
                         <div class="control">
@@ -265,6 +266,7 @@
                             <input id="lo_en" class="checkbox" type="checkbox">
                         </div>
                     </div>
+                -->
 
                     <div class="field">
                         <label class="label">Enable diseq (22kHz)</label>
@@ -374,6 +376,7 @@
                             <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
                             <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
                             <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
+                            <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
