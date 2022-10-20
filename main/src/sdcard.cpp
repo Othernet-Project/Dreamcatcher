@@ -3,6 +3,7 @@
 #include <driver/sdspi_host.h>
 #include <driver/sdmmc_types.h>
 #include <driver/sdspi_host.h>
+#include "driver/sdmmc_host.h"
 #include <esp_spiffs.h>
 #include <esp_vfs_fat.h>
 #include <sdmmc_cmd.h>
@@ -35,7 +36,7 @@ esp_err_t initSDcard()
     sdmmc_card_t *sd_card;
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.flags = SDMMC_HOST_FLAG_SPI | SDMMC_HOST_FLAG_DEINIT_ARG | SDMMC_HOST_FLAG_1BIT;
-    host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    host.max_freq_khz = SDMMC_FREQ_DEFAULT;
     sdspi_device_config_t sd_slot = SDSPI_DEVICE_CONFIG_DEFAULT(); // TODO
     sd_slot.gpio_cs = SD_CS;
     sd_slot.host_id = (spi_host_device_t)host.slot;
@@ -53,8 +54,8 @@ esp_err_t initSDcard()
     bus_cfg.miso_io_num = SD_MISO,
     bus_cfg.sclk_io_num = SD_SCK,
     bus_cfg.quadwp_io_num = -1,
-    bus_cfg.quadhd_io_num = -1,
-    bus_cfg.max_transfer_sz = 4 * 1024;
+    bus_cfg.quadhd_io_num = -1;
+    //bus_cfg.max_transfer_sz = 4 * 1024;
 
     esp_err_t err = spi_bus_initialize((spi_host_device_t)host.slot, &bus_cfg, SPI_DMA_CH_AUTO);
     if (err != ESP_OK)
@@ -89,7 +90,9 @@ esp_err_t initSDcard()
         pdrv = fs->pdrv;
     }
 
-    sdmmc_card_print_info(stdout, sd_card);
+    //sdmmc_card_print_info(stdout, sd_card);
+    Serial.print("SD card err var: ");
+    Serial.println(err);
 
     return err;
 }

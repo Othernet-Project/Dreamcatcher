@@ -37,6 +37,8 @@ extern uint8_t SpreadingFactor;        //LoRa spreading factor
 extern uint8_t CodeRate;            //LoRa coding rate
 extern uint8_t PacketLength;
 
+extern bool bEnableTlm;
+
 extern int8_t TXpower;                      //LoRa transmit power in dBm
 
 #define RXBUFFER_SIZE 255                        //RX buffer size  (MAX 255)
@@ -64,9 +66,10 @@ void lrSendData();
 void loadSettings();
 void storeLoraSettings();
 void storeWifiCredsAP(char* ssid, char* pass);
-void storeWifiCredsSTA(char* ssid, char* pass);
+void storeWifiCredsSTA(char* ssid, char* pass, bool tlm);
 void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
 uint16_t countBitrate(uint16_t update);
+float countPktrate(uint16_t update);
 void vTaskGetRunTimeStats2();
 void setDefaults();
 extern xQueueHandle rxQueue;

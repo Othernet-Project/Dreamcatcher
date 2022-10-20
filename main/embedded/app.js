@@ -133,7 +133,11 @@ const xhr = new XMLHttpRequest();
 function getfilestree(path) {
     console.log(path);
     xhr.open("GET", path + '/', true);
-    xhr.send();    
+    try {
+        xhr.send();    
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 // build DOM for filetree
@@ -266,11 +270,11 @@ function saveReceiver() {
 }
 
 // send WIFI Creds to backend
-function postWifiSettings(path, ssid, pass, ap, auth) {
+function postWifiSettings(path, ssid, pass, ap, auth, tlm) {
     const http = new XMLHttpRequest();
 
     console.log(path);
-    var params = 'ssid=' + ssid + '&pass=' + pass + '&ap=' + ap + '&auth=' + auth;
+    var params = 'ssid=' + ssid + '&pass=' + pass + '&ap=' + ap + '&auth=' + auth + '&tlm=' + tlm;
     console.log(params);
     var url = '/wifi';
     http.open("POST", url, true);
@@ -292,7 +296,7 @@ function saveWifiAp() {
     let ssid = document.getElementById('ap_ssid').value;
     let pwd = document.getElementById('ap_pwd').value;
     let auth = document.getElementById('ap_auth').value;
-    if(postWifiSettings('', ssid, pwd, 1, auth)){
+    if(postWifiSettings('', ssid, pwd, 1, auth, 0)){
         document.getElementById('tag_saveAp').classList.remove('is-hidden');
         setTimeout(function(){ document.getElementById('tag_saveAp').classList.add('is-hidden'); }, 5000);
     }
@@ -302,7 +306,8 @@ function saveWifiAp() {
 function saveWifiClient() {
     let ssid = document.getElementById('sta_ssid').value;
     let pwd = document.getElementById('sta_pwd').value;
-    if(postWifiSettings('', ssid, pwd, 0, 0)){
+    let tlm = document.getElementById('sta_tlm').checked;
+    if(postWifiSettings('', ssid, pwd, 0, 0, tlm)){
         document.getElementById('tag_saveSta').classList.remove('is-hidden');
         setTimeout(function(){ document.getElementById('tag_saveSta').classList.add('is-hidden'); }, 5000);
     }
@@ -401,6 +406,11 @@ async function getMp3(filepath) {
     return '<audio controls src="'+filepath+'" type="audio/mpeg">Your browser does not support the audio element.</audio>'
 }
 
+// get Image file and return it
+async function getImage(filepath) {
+    return '<img src="'+filepath+'" style="width: 100%">'
+}
+
 // get File and open it in the Viewer
 async function viewFile(filepath, fileExt) {
     document.getElementById('md_fileview_status').classList.add('loader');
@@ -408,6 +418,7 @@ async function viewFile(filepath, fileExt) {
 
     let iframeElement = document.getElementById('data');
     iframeElement.src = "about:blank";
+    fileExt = fileExt.toString().toLowerCase();
 
     if (fileExt == 'tbz2') {
         console.log('tbz2 File');
@@ -420,6 +431,10 @@ async function viewFile(filepath, fileExt) {
     if (fileExt == 'mp3') {
         console.log('MP3 File');
         result = await getMp3(filepath);
+    }
+    if (fileExt == 'jpg' || fileExt == 'jpeg' || fileExt == 'png') {
+        console.log('jpg file');
+        result = await getImage(filepath);
     }
 
     // Set the iframe's new HTML
