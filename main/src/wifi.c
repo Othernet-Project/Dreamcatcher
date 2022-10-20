@@ -54,10 +54,10 @@ void initWifi(const char* ssid_ap, const char* pass_ap)
 
     esp_netif_t *esp_netif = NULL;
     esp_netif = esp_netif_next(esp_netif);
-    esp_netif_set_hostname(esp_netif, "Othernet-DC4");
+    esp_netif_set_hostname(esp_netif, "Othernet");
 
     esp_netif = esp_netif_next(esp_netif);
-    esp_netif_set_hostname(esp_netif, "Othernet-DC4");
+    esp_netif_set_hostname(esp_netif, "Othernet");
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));

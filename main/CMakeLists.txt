@@ -5,7 +5,8 @@ set(target_name "${idf_target}")
 set(SRCS 
     main.cpp 
     src/sdcard.cpp
-    src/wifi.c
+    #src/wifi.c
+    src/wifi.cpp
     src/web_server.c
     #src/sx1280.cpp
     src/lr11xx.cpp

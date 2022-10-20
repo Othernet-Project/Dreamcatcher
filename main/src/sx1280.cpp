@@ -141,11 +141,10 @@ extern "C" void getMidi(char* _txtarray)
 /**
  * Helper function to feed website with stats
  */
-extern "C" void getPacketStats(int8_t* rssi, int8_t* snr, int8_t* ssnr)
+extern "C" void getPacketStats(int8_t* rssi, int8_t* snr)
 {
   *rssi = PacketRSSI;
   *snr = PacketSNR;
-  *ssnr = 0;
 }
 
 class mycallback : public carousel::callback {

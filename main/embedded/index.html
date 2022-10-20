@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Dreamcatcher V4 | Othernet</title>
+        <title>Dreamcatcher | Othernet</title>
         <link rel="stylesheet" href="app.css">
         <script src="tone.js"></script>
         <script src="app.js"></script>
@@ -76,14 +76,8 @@
                         <div class="control">
                             <div class="select">
                                 <select id="ap_auth">
-                                    <option value="0">WIFI_AUTH_OPEN</option>
-                                    <option value="1">WIFI_AUTH_WEP</option>
-                                    <option value="2">WIFI_AUTH_WPA_PSK</option>
-                                    <option value="3">WIFI_AUTH_WPA2_PSK</option>
-                                    <option value="4">WIFI_AUTH_WPA_WPA2_PSK</option>
-                                    <option value="5">WIFI_AUTH_WPA2_ENTERPRISE</option>
-                                    <option value="6">WIFI_AUTH_WPA3_PSK</option>
-                                    <option value="7">WIFI_AUTH_WPA2_WPA3_PSK</option>
+                                    <option value="0">Open</option>
+                                    <option value="1">WPA2</option>
                                 </select>
                             </div>
                         </div>
@@ -117,6 +111,13 @@
                         <label class="label">Password</label>
                         <div class="control">
                             <input id="sta_pwd" class="input" type="password" placeholder="*********">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Enable Telemetry</label>
+                        <div class="control">
+                            <input id="sta_tlm" class="checkbox" type="checkbox" checked>
                         </div>
                     </div>
                     

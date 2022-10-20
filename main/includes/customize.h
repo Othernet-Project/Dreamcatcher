@@ -1,12 +1,12 @@
 #pragma once
 #include "sdkconfig.h"
 
-#define HW_VERSION "2022.07"
-#define FW_VERSION "1.6.0-rc"
+#define HW_VERSION "2022.10"
+#define FW_VERSION "1.0.0"
 
-#define EXAMPLE_ESP_WIFI_SSID      "Othernet DC-LR"
+#define EXAMPLE_ESP_WIFI_SSID      "Othernet"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
-#define DEFAULT_FREQUENCY 1932315000
+#define DEFAULT_FREQUENCY 2339400000
 #define DEFAULT_BW 0x0D
 #define DEFAULT_SF 0x09
 #define DEFAULT_CR 0x01
