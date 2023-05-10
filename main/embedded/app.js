@@ -238,6 +238,25 @@ function updateStats(jsnStats) {
     document.getElementById('stats_offset').innerText = jsnStats.offset;    
 }
 
+// Receiver Preset/Increment Freq functions
+function setReceiverPresetUS() {
+    document.getElementById('rcv_freq').value = 2308100000;
+}
+
+function setReceiverPresetEU() {
+    document.getElementById('rcv_freq').value = 1907000000;
+}
+
+function setReceiverAddTick() {
+    var freq = parseInt(document.getElementById('rcv_freq').value);
+    document.getElementById('rcv_freq').value = freq + 10000;
+}
+
+function setReceiverRemoveTick() {
+    var freq = parseInt(document.getElementById('rcv_freq').value);
+    document.getElementById('rcv_freq').value = freq - 10000;
+}
+
 // save Reeiver Settings
 function saveReceiver() {
     let freq = document.getElementById('rcv_freq').value;

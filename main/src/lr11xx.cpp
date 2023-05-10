@@ -80,11 +80,11 @@ void init_gpio(void) {
 
   //pinMode(BUZ_PIN, OUTPUT);
 
-  
+  /*
   ledcSetup(0, 5000, 8);
   ledcAttachPin(BUZ_PIN, 0);
 
-  /*
+  
   ledcWriteNote(0, NOTE_C, 4);
   delay(500);
   ledcWrite(0, 127);
@@ -111,8 +111,8 @@ void init_gpio(void) {
   delay(500);
   ledcWriteNote(0, NOTE_B, 4);
   delay(500);
-  */
-  //ledcDetachPin(BUZ_PIN);
+  
+  ledcDetachPin(BUZ_PIN);*/
 
 };
 
@@ -136,10 +136,10 @@ void blinky(void *pvParameter)
         if( xSemaphoreTake( blink_rx, portMAX_DELAY ) == pdTRUE )
         {
           gpio_set_level((gpio_num_t)LED_PIN, 1);
-          //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
+          gpio_set_level((gpio_num_t)BUZ_PIN, 1);
           vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
           gpio_set_level((gpio_num_t)LED_PIN, 0);
-          //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
+          gpio_set_level((gpio_num_t)BUZ_PIN, 0);
         }
     }
 }
@@ -337,10 +337,10 @@ void initLR11xx()
   attachInterrupt(DIO1, rx1110ISR, RISING);
   attachInterrupt(RFBUSY, busyIRQ, RISING);
 
-  lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
+  //lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
   //lr11xx_radio_set_tx_infinite_preamble(&lrRadio);
-  //Serial.println("TX enabled for testing");
-  //lr11xx_radio_set_tx_cw(&lrRadio);
+  Serial.println("TX enabled for testing");
+  lr11xx_radio_set_tx_cw(&lrRadio);
 
   loraReady = true;
 
