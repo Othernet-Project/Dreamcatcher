@@ -1,12 +1,12 @@
 #pragma once
 #include "sdkconfig.h"
 
-#define HW_VERSION "2022.07"
-#define FW_VERSION "1.6.0-rc"
+#define HW_VERSION "2023.01"
+#define FW_VERSION "1.0.0"
 
-#define EXAMPLE_ESP_WIFI_SSID      "Othernet DC-LR"
+#define EXAMPLE_ESP_WIFI_SSID      "Othernet"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
-#define DEFAULT_FREQUENCY 1932315000
+#define DEFAULT_FREQUENCY 2400100000
 #define DEFAULT_BW 0x0D
 #define DEFAULT_SF 0x09
 #define DEFAULT_CR 0x01
@@ -17,7 +17,7 @@
 
 
 //DC 2206 (LR based)
-#define SD_MISO  (gpio_num_t)37
+#define SD_MISO  (gpio_num_t)10
 #define SD_MOSI  (gpio_num_t)39
 #define SD_SCK   (gpio_num_t)38
 #define SD_CS    (gpio_num_t)40
@@ -38,7 +38,7 @@
 
 #define LO_DATA (gpio_num_t)18
 #define LO_CLK 41
-#define TPS_EXTM (gpio_num_t)35
+#define TPS_EXTM (gpio_num_t)45
 
 // other Pins
 #define LED_PIN 6

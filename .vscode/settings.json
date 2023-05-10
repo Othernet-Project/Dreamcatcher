@@ -63,6 +63,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "hash_map": "cpp",
-        "hash_set": "cpp"
+        "hash_set": "cpp",
+        "esp_wifi.h": "c"
     }
 }

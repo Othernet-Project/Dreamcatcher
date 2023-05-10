@@ -1,5 +1,4 @@
 #include "Preferences.h"
-
 #include "customize.h"
 #include "settings.h"
 #include "wifi.h"
@@ -33,6 +32,7 @@ void loadSettings()
   bEnableLO = prefs.getBool("lo", false);
   bEnableDiseq = prefs.getBool("diseq", false);
 
+  bEnableTlm = prefs.getBool("statlm", false);
   // wifi settings
   String ssid_ap = prefs.getString("apssid", EXAMPLE_ESP_WIFI_SSID);
   String pass_ap = prefs.getString("appass", EXAMPLE_ESP_WIFI_PASS);
@@ -41,8 +41,10 @@ void loadSettings()
   char pass_sta[32] = {0};
 
   prefs.getString("stapass", pass_sta, 32);
-  initWifi(ssid_ap.c_str(), pass_ap.c_str());
+  //TODO: Replace with arduino wifi AP
+  initWifi((char*)ssid_ap.c_str(), (char*)pass_ap.c_str());
 
+  // if SSID and PW is set for WifiClient -> use it
   if (prefs.getString("stassid", ssid_sta, 32))
   {
     wifi_init_sta(ssid_sta, pass_sta);
@@ -60,11 +62,12 @@ extern "C" void storeWifiCredsAP(char* ssid, char* pass)
   prefs.end();
 }
 
-extern "C" void storeWifiCredsSTA(char* ssid, char* pass)
+extern "C" void storeWifiCredsSTA(char* ssid, char* pass, bool tlm)
 {
   prefs.begin("lora", false);
   prefs.putString("stassid", ssid);
   prefs.putString("stapass", pass);
+  prefs.putBool("statlm", tlm);
   prefs.end();
 }
 
@@ -157,7 +160,7 @@ void vTaskGetRunTimeStats2( )
 
    /* Allocate a TaskStatus_t structure for each task.  An array could be
    allocated statically at compile time. */
-   pxTaskStatusArray = (TaskStatus_t *)heap_caps_calloc(uxArraySize, sizeof( TaskStatus_t ) ,MALLOC_CAP_INTERNAL);
+   pxTaskStatusArray = (TaskStatus_t *)heap_caps_calloc(uxArraySize, sizeof( TaskStatus_t ) ,MALLOC_CAP_SPIRAM);
 
    if( pxTaskStatusArray != NULL )
    {

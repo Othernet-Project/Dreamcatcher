@@ -38,7 +38,7 @@
 #include "customize.h"
 
 extern void storeWifiCredsAP(char* ssid, char* pass);
-extern void storeWifiCredsSTA(char* ssid, char* pass);
+extern void storeWifiCredsSTA(char* ssid, char* pass, bool tlm);
 extern void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
 extern void getMidi(char* _txtarray);
 
@@ -57,12 +57,13 @@ extern const char tone_js_end[]   asm("_binary_tone_js_gz_end");
 #define VFS_MOUNT "/files"
 extern portMUX_TYPE sxMux;
 extern bool sdCardPresent;
+extern bool bEnableTlm;
 extern void enableLNB();
 extern void enable22kHz(bool en);
 extern void enableLO(bool en, uint8_t id);
 
 /* Scratch buffer size */
-#define SCRATCH_BUFSIZE  20*1024
+#define SCRATCH_BUFSIZE  32*1024
 
 struct web_server_data {
     /* Base path of file storage */
@@ -77,6 +78,7 @@ static const char *TAG = "web_server";
 static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
 void getFreeStorageSPIFFS(uint64_t* total, uint64_t* used);
 
+/*
 static void getFreeSpace(uint64_t* used_space, uint64_t* max_space)
 {
     if(sdCardPresent) {
@@ -92,7 +94,7 @@ static void getFreeSpace(uint64_t* used_space, uint64_t* max_space)
         *used_space = 1;
         *max_space = 1;
     }
-}
+}*/
 
 /**
  * Make files tree to JSON string
@@ -150,7 +152,8 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
     if (!sdCardPresent)
     {
         portENTER_CRITICAL(&sxMux);
-        entry = readdir(dir);
+        //entry = readdir(dir);
+        entry = NULL;
         portEXIT_CRITICAL(&sxMux);
 
     } else {
@@ -167,7 +170,7 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
         if (!sdCardPresent)
         {
             portENTER_CRITICAL(&sxMux);
-                st = stat(entrypath, &entry_stat);
+                //st = stat(entrypath, &entry_stat);
             portEXIT_CRITICAL(&sxMux);
 
         } else {
@@ -178,7 +181,7 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
             continue;
         }
         sprintf(entrysize, "%ld", entry_stat.st_size);
-        // ESP_LOGI(TAG, "Found %s : %s (%s bytes)", entrytype, entry->d_name, entrysize);
+        //ESP_LOGI(TAG, "Found %s : %s (%s bytes)", entrytype, entry->d_name, entrysize);
 
         strlcpy(_script + strlen(_script), ", ", 3);
         /* Send chunk of HTML file containing table entries with file name and size */
@@ -206,7 +209,8 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
         if (!sdCardPresent)
         {
             portENTER_CRITICAL(&sxMux);
-            entry = readdir(dir);
+            //entry = readdir(dir);
+            entry = NULL;
             portEXIT_CRITICAL(&sxMux);
 
         } else {
@@ -234,6 +238,8 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filena
         return httpd_resp_set_type(req, "text/html");
     } else if (IS_FILE_EXT(filename, ".jpeg")) {
         return httpd_resp_set_type(req, "image/jpeg");
+    } else if (IS_FILE_EXT(filename, ".jpg")) {
+        return httpd_resp_set_type(req, "image/jpeg");
     } else if (IS_FILE_EXT(filename, ".png")) {
         return httpd_resp_set_type(req, "image/png");
     } else if (IS_FILE_EXT(filename, ".ico")) {
@@ -257,16 +263,18 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filena
  * pointer to path (skipping the preceding base path) */
 static const char* get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
 {
+    char* uri_decoded = uri;
+    urldecode(uri_decoded);
     const size_t base_pathlen = strlen(base_path);
-    size_t pathlen = strlen(uri);
+    size_t pathlen = strlen(uri_decoded);
 
-    const char *quest = strchr(uri, '?');
+    const char *quest = strchr(uri_decoded, '?');
     if (quest) {
-        pathlen = MIN(pathlen, quest - uri);
+        pathlen = MIN(pathlen, quest - uri_decoded);
     }
-    const char *hash = strchr(uri, '#');
+    const char *hash = strchr(uri_decoded, '#');
     if (hash) {
-        pathlen = MIN(pathlen, hash - uri);
+        pathlen = MIN(pathlen, hash - uri_decoded);
     }
 
     if (base_pathlen + pathlen + 1 > destsize) {
@@ -276,8 +284,8 @@ static const char* get_path_from_uri(char *dest, const char *base_path, const ch
 
     /* Construct full path (base + path) */
     // strcpy(dest, base_path);
-    strlcpy(dest, uri, pathlen + 1);
-    urldecode(dest);
+    strlcpy(dest, uri_decoded, pathlen + 1);
+    //urldecode(dest);
     /* Return pointer to path, skipping the base */
     return dest;
 }
@@ -345,10 +353,10 @@ static void ws_async_send(void *arg)
     uint64_t max_space = 0;
     getFreeSpace(&used_space, &max_space);
 
-    int8_t snr = 0, rssi = 0, ssnr = 0;
+    int8_t snr = 0, rssi = 0;
     uint16_t crc = 0, header = 0;
     getStats(&crc, &header);
-    getPacketStats(&rssi, &snr, &ssnr);
+    getPacketStats(&rssi, &snr);
 
     struct async_resp_arg *resp_arg = arg;
     httpd_handle_t hd = resp_arg->hd;
@@ -389,7 +397,7 @@ static void ws_async_send(void *arg)
 
 static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
 {
-    struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    struct async_resp_arg *resp_arg = heap_caps_malloc(sizeof(struct async_resp_arg), MALLOC_CAP_SPIRAM);
     resp_arg->hd = req->handle;
     resp_arg->fd = httpd_req_to_sockfd(req);
     return httpd_queue_work(handle, ws_async_send, resp_arg);
@@ -579,12 +587,14 @@ static esp_err_t settings_handler(httpd_req_t *req)
     int _sf = atoi(sf + 3);
     int _cr = atoi(cr + 3);
     extern bool bEnableLNB;
+    extern bool bEnableDiseq;
     bool bLO = strncmp(lo + 3, "true", 4) == 0;
-    bool bDiseq = strncmp(diseq + 6, "true", 4) == 0;
+    //bool bDiseq = strncmp(diseq + 6, "true", 4) == 0;
+    bEnableDiseq = strncmp(diseq + 6, "true", 4) == 0;
     bEnableLNB = strncmp(lnb + 4, "true", 4) == 0;
     ESP_LOGI(TAG, "Settings: freq => %u, bw => %d, sf => %d, cr => %d, lnb => %d", _freq, _bw, _sf, _cr, bEnableLNB);
     enableLNB();
-    enable22kHz(bDiseq);
+    //enable22kHz(bDiseq);
     //enableLO(bLO, uLOid);
     updateLoraSettings(_freq, _bw, _sf, _cr);
 
@@ -659,25 +669,27 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     char* pass = strstr(content, "pass=");
     char* ap = strstr(content, "ap=");
     char* auth = strstr(content, "auth=");
-    char _ssid[32] = {0}, _pass[32] = {0};
+    char* tlm = strstr(content, "tlm=");
+    char _ssid[64] = {0}, _pass[64] = {0};
     int ssid_len = pass - ssid - 6;
     int pass_len = ap - pass - 6;
     int type = atoi(ap + 3);
     int _auth = atoi(auth + 5);
+    bEnableTlm = strncmp(tlm + 4, "true", 4) == 0;
     strncpy(_ssid, ssid + 5, ssid_len);
     strncpy(_pass, pass + 5, pass_len);
     ESP_LOGI(TAG, "query string len: %d => %s", len, content);
-    ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d", _ssid, _pass, type?"AP":"STA", _auth);
+    ESP_LOGI(TAG, "ssid: %s, pass: %s, type: %s, auth: %d, tlm: %d", _ssid, _pass, type?"AP":"STA", _auth, bEnableTlm);
 
-    if (ssid_len && (!pass_len || ( 8 <= pass_len && pass_len <= 32 )))
+    if (ssid_len && (!pass_len || ( 8 <= pass_len && pass_len <= 64 )))
     {
         if (type) 
         {
-            wifi_init_softap(_ssid, _pass, _auth);
+            wifi_init_softap(_ssid, _pass);
             storeWifiCredsAP(_ssid, _pass);
         } else {
             wifi_init_sta(_ssid, _pass);
-            storeWifiCredsSTA(_ssid, _pass);
+            storeWifiCredsSTA(_ssid, _pass, bEnableTlm);
         }
     }
 

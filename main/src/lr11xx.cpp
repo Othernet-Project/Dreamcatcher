@@ -51,6 +51,9 @@ static uint8_t lastPacket;
 static uint8_t packets[100] = {0};
 static uint8_t y = 0;
 
+//pktrate vars
+static uint8_t packetsInInterval;
+
 bool loraReady;                           // variable to display LoRa fault with led or on website
 
 struct midi_data {
@@ -64,6 +67,8 @@ struct midi_data midiarray[32];
 uint8_t firstnote = 0;
 char* txtarray;
 
+static SemaphoreHandle_t blink_rx;
+
 uint32_t midiNoteToFreq(uint8_t note){
     return pow(2, ((note - 69) / 12)) * 440;
 }
@@ -75,11 +80,11 @@ void init_gpio(void) {
 
   //pinMode(BUZ_PIN, OUTPUT);
 
-  
+  /*
   ledcSetup(0, 5000, 8);
   ledcAttachPin(BUZ_PIN, 0);
 
-  /*
+  
   ledcWriteNote(0, NOTE_C, 4);
   delay(500);
   ledcWrite(0, 127);
@@ -106,8 +111,8 @@ void init_gpio(void) {
   delay(500);
   ledcWriteNote(0, NOTE_B, 4);
   delay(500);
-  */
-  //ledcDetachPin(BUZ_PIN);
+  
+  ledcDetachPin(BUZ_PIN);*/
 
 };
 
@@ -126,12 +131,17 @@ void lrSendData()
 
 void blinky(void *pvParameter)
 {
-  gpio_set_level((gpio_num_t)LED_PIN, 1);
-  //gpio_set_level((gpio_num_t)BUZ_PIN, 1);
-  vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
-  gpio_set_level((gpio_num_t)LED_PIN, 0);
-  //gpio_set_level((gpio_num_t)BUZ_PIN, 0);
-  vTaskDelete(NULL);
+  while(1)
+    {
+        if( xSemaphoreTake( blink_rx, portMAX_DELAY ) == pdTRUE )
+        {
+          gpio_set_level((gpio_num_t)LED_PIN, 1);
+          gpio_set_level((gpio_num_t)BUZ_PIN, 1);
+          vTaskDelay(10 / portTICK_RATE_MS); // sleep 100ms
+          gpio_set_level((gpio_num_t)LED_PIN, 0);
+          gpio_set_level((gpio_num_t)BUZ_PIN, 0);
+        }
+    }
 }
 
 /**
@@ -160,11 +170,10 @@ extern "C" void getMidi(char* _txtarray)
 /**
  * Helper function to feed website with stats
  */
-extern "C" void getPacketStats(int8_t* rssi, int8_t* snr, int8_t* ssnr)
+extern "C" void getPacketStats(int8_t* rssi, int8_t* snr)
 {
   *rssi = PacketRSSI;
   *snr = PacketSNR;
-  *ssnr = 0;
 }
 
 class mycallback : public carousel::callback {
@@ -174,7 +183,7 @@ class mycallback : public carousel::callback {
     strcpy(filename, path.c_str());
   }
 	void processFile(unsigned int index, unsigned int count) {
-    Serial.printf("file progress: %d of %d packets\n", index, count);
+    Serial.printf("file progress: %d of %d bytes\n", index, count);
     filepacket = index;
     filepackets = count;
   }
@@ -249,17 +258,17 @@ void initLR11xx()
   lr11xx_system_get_status(&lrRadio, &lrStat1, &lrStat2, &lrIrq_status);
   Serial.print("DCDC Stat1: ");
   Serial.println(lrStat1.command_status);
-/*
+
   // SET RF Switches
   const lr11xx_system_rfswitch_cfg_t rfsw_cfg = {
     .enable = LR11XX_SYSTEM_RFSW0_HIGH,
     .standby = LR11XX_SYSTEM_RFSW0_HIGH,
     .rx = LR11XX_SYSTEM_RFSW0_HIGH,
-    .tx = LR11XX_SYSTEM_RFSW0_HIGH | LR11XX_SYSTEM_RFSW1_HIGH,
-    .tx_hp = LR11XX_SYSTEM_RFSW1_HIGH,
+    .tx = LR11XX_SYSTEM_RFSW0_HIGH,
+    .tx_hp = LR11XX_SYSTEM_RFSW0_HIGH,
   };
   lr11xx_system_set_dio_as_rf_switch(&lrRadio, &rfsw_cfg);
-*/
+
   //lr11xx_system_set_tcxo_mode(&lrRadio, lr11xx_SYSTEM_TCXO_CTRL_3_0V, 0x70);
   lr11xx_system_set_tcxo_mode(&lrRadio, LR11XX_SYSTEM_TCXO_CTRL_1_8V, 0x70);
   
@@ -328,10 +337,10 @@ void initLR11xx()
   attachInterrupt(DIO1, rx1110ISR, RISING);
   attachInterrupt(RFBUSY, busyIRQ, RISING);
 
-  lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
+  //lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
   //lr11xx_radio_set_tx_infinite_preamble(&lrRadio);
-  //Serial.println("TX enabled for testing");
-  //lr11xx_radio_set_tx_cw(&lrRadio);
+  Serial.println("TX enabled for testing");
+  lr11xx_radio_set_tx_cw(&lrRadio);
 
   loraReady = true;
 
@@ -339,6 +348,9 @@ void initLR11xx()
   lr11xx_system_get_errors( &lrRadio, &lrErrors );
   Serial.print("lr11xx Errors: ");
   Serial.println(lrErrors);
+
+  blink_rx = xSemaphoreCreateBinary();
+  xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
 }
 
 /**
@@ -392,18 +404,18 @@ uint8_t readbufferlr11xx(uint8_t *rxbuffer, uint8_t size)
   lr11xx_radio_lora_cr_t pktCrInfo;
   bool CRCInfo;
   lr11xx_radio_get_lora_rx_info(&lrRadio, &CRCInfo, &pktCrInfo);
-  Serial.printf("Pkt header info - crc: %02X , codingrate: %02X \n", CRCInfo, pktCrInfo);
+  //Serial.printf("Pkt header info - crc: %02X , codingrate: %02X \n", CRCInfo, pktCrInfo);
 
   //get lora stats
   lr11xx_radio_stats_lora_t loraStats;
   lr11xx_radio_get_lora_stats(&lrRadio, &loraStats);
-  Serial.printf("Lorastats: RX %i, CRC %i, HEADER %i \n", loraStats.nb_pkt_received, loraStats.nb_pkt_crc_error, loraStats.nb_pkt_header_error);
+  //Serial.printf("Lorastats: RX %i, CRC %i, HEADER %i \n", loraStats.nb_pkt_received, loraStats.nb_pkt_crc_error, loraStats.nb_pkt_header_error);
 
   // get rx buffer size to read
   lr11xx_radio_rx_buffer_status_t bufferStatus;
   lr11xx_radio_get_rx_buffer_status(&lrRadio, &bufferStatus);
   
-  Serial.printf("RX Buffer (len: %i, offset: %i): \n", bufferStatus.pld_len_in_bytes, bufferStatus.buffer_start_pointer);
+  //Serial.printf("RX Buffer (len: %i, offset: %i): \n", bufferStatus.pld_len_in_bytes, bufferStatus.buffer_start_pointer);
 
   RXPacketL = bufferStatus.pld_len_in_bytes;
   RXstart = bufferStatus.buffer_start_pointer;
@@ -412,7 +424,7 @@ uint8_t readbufferlr11xx(uint8_t *rxbuffer, uint8_t size)
   // read rxbuffer over SPI afap
   lr11xx_regmem_read_buffer8(&lrRadio, rxbuffer, RXstart, RXPacketL);
   
-  Serial.println((char*)rxbuffer);
+  //Serial.println((char*)rxbuffer);
 
   return RXPacketL;
 }
@@ -422,6 +434,8 @@ uint8_t readbufferlr11xx(uint8_t *rxbuffer, uint8_t size)
  */
 void rxTaskLR11xx(void* p)
 {
+  Serial.print("RXTask on Core: ");
+  Serial.println (xPortGetCoreID());
   static uint32_t mask = 0;
   data_carousel.init("/files/TMP", new mycallback());
   float lastMidiStart = 0;
@@ -448,7 +462,7 @@ void rxTaskLR11xx(void* p)
         gpio_set_level((gpio_num_t)LED_PIN, 0);
       }
       if(IRQStatus & LR11XX_SYSTEM_IRQ_RX_DONE) {
-        Serial.println("GOT A PACKET WOOHOO!");
+        //Serial.println("GOT A PACKET WOOHOO!");
 
         lr11xx_radio_pkt_status_lora_t pkt_status;        
         lr11xx_radio_get_lora_pkt_status( &lrRadio, &pkt_status );        
@@ -456,10 +470,11 @@ void rxTaskLR11xx(void* p)
         PacketRSSI = pkt_status.rssi_pkt_in_dbm;              //read the recived RSSI value
         PacketSNR = pkt_status.snr_pkt_in_db;                //read the received SNR value
         //offset = LT.getFrequencyErrorRegValue();
+        /*
         Serial.println("Packet stats------");
         Serial.printf("RSSI: %d, SNR: %d \n", PacketRSSI, PacketSNR);
         Serial.println("---------------------");
-
+        */
         uint8_t data[256];
 
         RXPacketL = readbufferlr11xx(data, RXBUFFER_SIZE);
@@ -467,21 +482,23 @@ void rxTaskLR11xx(void* p)
         //Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
         //Serial.println((char*)data);
 
-        udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
+        //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
 
-        xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+        //xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+        xSemaphoreGive(blink_rx);
         
         packetsRX++;
         lastPacket = y%100;
         packets[lastPacket] = RXPacketL;
         packetsCount++;
         y++;
+        packetsInInterval++;
         
         // Check if we got a special Realtime Packet
         //0x73 = Midi Stream
         if(data[2] == 0x73){
           Serial.println("--- Got a MIDI Packet ---");
-          udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
+          //udp.writeTo(data+4, RXPacketL-8, IPAddress(239,1,2,3), 8281);
           uint8_t midibuf[10] = {0};
           int chunks = floor((RXPacketL-8)/10);
           //loop at data in 10byte chunks to parse Data
@@ -510,15 +527,15 @@ void rxTaskLR11xx(void* p)
         }
       
         if(RXPacketL > 0) {
-          Serial.println("Consume data check");
+          //Serial.println("Consume data check");
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
             if (!sdCardPresent)
             {
-              portENTER_CRITICAL(&sxMux);
-                data_carousel.consume(data, RXPacketL);
-              portEXIT_CRITICAL(&sxMux);
+              //portENTER_CRITICAL(&sxMux);
+                //data_carousel.consume(data, RXPacketL);
+              //portEXIT_CRITICAL(&sxMux);
             } else {
-              Serial.println("consume Data");
+              //Serial.println("consume Data");
               data_carousel.consume(data, RXPacketL);
             }
           }
@@ -571,4 +588,17 @@ uint16_t countBitrate(uint16_t update)
   Serial.printf("bitrate: %d bits/s\n", bitrate * 8 * 1000/update);
 
   return bitrate * 8 * 1000/update; // bitrate in bits/s
+}
+
+/**
+ * Simple function to count LoRa Paketrate
+ * @param update - time in millis from last update
+ */
+float countPktrate(uint16_t update)
+{
+  float pktrate = 0;
+  pktrate = (float)packetsInInterval / (update/1000);
+  packetsInInterval = 0;  
+  Serial.printf("pktrate: %.2f pkts/s\n", pktrate);
+  return pktrate; // bitrate in bits/s
 }
