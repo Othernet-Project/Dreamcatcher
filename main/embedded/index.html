@@ -178,6 +178,16 @@
             <div class="modal-content">
                 <div class="box">
                     <h3 class="subtitle">Receiver Setup<span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    
+                    <div class="field is-grouped pt-4">
+                        <div class="control">
+                            <button onclick="setReceiverPresetUS()" class="button is-dark">US Sat</button>
+                            <button onclick="setReceiverPresetEU()" class="button is-dark">EU Sat</button>
+                            <button onclick="setReceiverRemoveTick()" class="button is-dark">-10khz</button>
+                            <button onclick="setReceiverAddTick()" class="button is-dark">+10khz</button>
+                        </div>
+                    </div>
+                    
                     <div class="field">
                         <label class="label">Frequency (Hz)</label>
                         <div class="control">
