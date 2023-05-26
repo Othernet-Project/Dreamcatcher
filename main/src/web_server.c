@@ -331,7 +331,8 @@ static const char ws_json[] = \
 \"used\":\"%llu\",\
 \"max\":\"%llu\",\
 \"filepath\":\"%s\",\
-\"filename\":\"%s\"}";
+\"filename\":\"%s\",\
+\"tstamp\":\"%s\"}";
 
 /*
  * async send function, which we put into the httpd work queue
@@ -358,6 +359,14 @@ static void ws_async_send(void *arg)
     getStats(&crc, &header);
     getPacketStats(&rssi, &snr);
 
+    //get timestamp over local device time
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    char *tstamp = (char*) heap_caps_malloc(64, MALLOC_CAP_SPIRAM);
+    sprintf(tstamp,"%02d.%02d.%d - %02d:%02d:%02d", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
     struct async_resp_arg *resp_arg = arg;
     httpd_handle_t hd = resp_arg->hd;
     int fd = resp_arg->fd;
@@ -383,7 +392,8 @@ static void ws_async_send(void *arg)
         used_space,
         max_space,
         "path",
-        filename
+        filename,
+        tstamp
     );
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.payload = (uint8_t*)data;
