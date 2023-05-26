@@ -47,6 +47,7 @@ extern AsyncUDP udp;
 
 void readMBR();
 esp_err_t initSDcard();
+bool logToFile(char *logText);
 esp_err_t initSPIFFS();
 void testStuff();
 void initLR1110();

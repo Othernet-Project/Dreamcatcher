@@ -181,6 +181,10 @@ class mycallback : public carousel::callback {
     Serial.println("--- File Complete ---");
     Serial.printf("new file path: %s\n", path.c_str());
     strcpy(filename, path.c_str());
+
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"File Complete:  %s", path.c_str());
+    logToFile(newLogEntry);
   }
 	void processFile(unsigned int index, unsigned int count) {
     Serial.printf("file progress: %d of %d bytes\n", index, count);
@@ -216,6 +220,10 @@ IRAM_ATTR void busyIRQ()
  */
 void initLR11xx()
 {
+  char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+  sprintf(newLogEntry,"initialization of Radio - LR11xx, Uptime: %lus", millis()/1000);
+  logToFile(newLogEntry);
+
   init_gpio();
 
   lr11xx_system_stat1_t lrStat1;
@@ -337,10 +345,10 @@ void initLR11xx()
   attachInterrupt(DIO1, rx1110ISR, RISING);
   attachInterrupt(RFBUSY, busyIRQ, RISING);
 
-  //lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
+  lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
   //lr11xx_radio_set_tx_infinite_preamble(&lrRadio);
-  Serial.println("TX enabled for testing");
-  lr11xx_radio_set_tx_cw(&lrRadio);
+  //Serial.println("TX enabled for testing");
+  //lr11xx_radio_set_tx_cw(&lrRadio);
 
   loraReady = true;
 
@@ -366,6 +374,10 @@ void getLR11xxInfo()
 
 extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr)
 {
+  char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+  sprintf(newLogEntry,"Updating Radio Settings and restarting it, Uptime: %lus", millis()/1000);
+  logToFile(newLogEntry);
+  
   Frequency = freq;
   SpreadingFactor = sf;
   Bandwidth = bw;

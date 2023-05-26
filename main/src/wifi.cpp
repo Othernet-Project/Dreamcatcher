@@ -8,6 +8,7 @@
 #include "customize.h"
 #include "esp_vfs.h"
 #include <esp_vfs_fat.h>
+#include "esp_sntp.h"
 
 extern bool sdCardPresent;
 extern SemaphoreHandle_t send_tlm;
@@ -49,6 +50,35 @@ void wifi_init_sta(char* ssid, char* pass)
     Serial.print("WiFi connected - ");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    // connected to wifi and maybe internet, try to set device time over ntp
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+    if (timeinfo.tm_year < (2023 - 1900)) {
+        Serial.println("Time is not set yet. Connecting to WiFi and getting time over NTP.");
+        //Init SNTP
+        sntp_setoperatingmode(SNTP_OPMODE_POLL);
+        sntp_setservername(0, "pool.ntp.org");
+        sntp_init();
+
+        int retry = 0;
+        const int retry_count = 10;
+        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+             Serial.printf("Waiting for system time to be set... (%d/%d)\n", retry, retry_count);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+        
+        //btain_time();
+        // update 'now' variable with current time
+        //time(&now);
+    }
 
     extern char myIP[20];
     memset(myIP, 0, 20);
