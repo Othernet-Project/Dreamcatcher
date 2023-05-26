@@ -37,6 +37,8 @@ extern uint8_t SpreadingFactor;        //LoRa spreading factor
 extern uint8_t CodeRate;            //LoRa coding rate
 extern uint8_t PacketLength;
 
+extern bool bEnableTlm;
+
 extern int8_t TXpower;                      //LoRa transmit power in dBm
 
 #define RXBUFFER_SIZE 255                        //RX buffer size  (MAX 255)
@@ -45,23 +47,30 @@ extern AsyncUDP udp;
 
 void readMBR();
 esp_err_t initSDcard();
+bool logToFile(char *logText);
 esp_err_t initSPIFFS();
 void testStuff();
 void initLR1110();
 void getLR1110Info();
+void initLR11xx();
+void getLR11xxInfo();
 void initSX1280();
 IRAM_ATTR void rxTaskLR1110(void* p);
+IRAM_ATTR void rxTaskLR11xx(void* p);
 IRAM_ATTR void dio1IrqTask(void* p);
 IRAM_ATTR void rxTaskSX1280(void* p);
 IRAM_ATTR uint8_t readbufferSX1280(uint8_t *rxbuffer, uint8_t size);
 IRAM_ATTR void rxTxISR();
 
+void lrSendData();
+
 void loadSettings();
 void storeLoraSettings();
 void storeWifiCredsAP(char* ssid, char* pass);
-void storeWifiCredsSTA(char* ssid, char* pass);
+void storeWifiCredsSTA(char* ssid, char* pass, bool tlm);
 void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
 uint16_t countBitrate(uint16_t update);
+float countPktrate(uint16_t update);
 void vTaskGetRunTimeStats2();
 void setDefaults();
 extern xQueueHandle rxQueue;

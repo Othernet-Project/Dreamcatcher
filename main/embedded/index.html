@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Dreamcatcher V4 | Othernet</title>
+        <title>Dreamcatcher | Othernet</title>
         <link rel="stylesheet" href="app.css">
         <script src="tone.js"></script>
         <script src="app.js"></script>
@@ -36,7 +36,7 @@
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
                         <a onclick="toggleModal('md_receiver')"class="navbar-item">Receiver</a>
-                        <a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>
+                        <!--<a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>-->
                     </div>
                 </div>
             </div>
@@ -76,14 +76,8 @@
                         <div class="control">
                             <div class="select">
                                 <select id="ap_auth">
-                                    <option value="0">WIFI_AUTH_OPEN</option>
-                                    <option value="1">WIFI_AUTH_WEP</option>
-                                    <option value="2">WIFI_AUTH_WPA_PSK</option>
-                                    <option value="3">WIFI_AUTH_WPA2_PSK</option>
-                                    <option value="4">WIFI_AUTH_WPA_WPA2_PSK</option>
-                                    <option value="5">WIFI_AUTH_WPA2_ENTERPRISE</option>
-                                    <option value="6">WIFI_AUTH_WPA3_PSK</option>
-                                    <option value="7">WIFI_AUTH_WPA2_WPA3_PSK</option>
+                                    <option value="0">Open</option>
+                                    <option value="1">WPA2</option>
                                 </select>
                             </div>
                         </div>
@@ -119,6 +113,13 @@
                             <input id="sta_pwd" class="input" type="password" placeholder="*********">
                         </div>
                     </div>
+
+                    <div class="field">
+                        <label class="label">Enable Telemetry</label>
+                        <div class="control">
+                            <input id="sta_tlm" class="checkbox" type="checkbox" checked>
+                        </div>
+                    </div>
                     
                     <div class="field is-grouped pt-4">
                         <div class="control">
@@ -131,7 +132,7 @@
                 </div>
             </div>
         </div>
-
+        <!--
         <div id="md_dcss" class="modal">
             <div class="modal-background"></div>
             <div class="modal-content">
@@ -170,12 +171,23 @@
                 </div>
             </div>
         </div>
+        -->
 
         <div id="md_receiver" class="modal">
             <div class="modal-background"></div>
             <div class="modal-content">
                 <div class="box">
                     <h3 class="subtitle">Receiver Setup<span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
+                    
+                    <div class="field is-grouped pt-4">
+                        <div class="control">
+                            <button onclick="setReceiverPresetUS()" class="button is-dark">US Sat</button>
+                            <button onclick="setReceiverPresetEU()" class="button is-dark">EU Sat</button>
+                            <button onclick="setReceiverRemoveTick()" class="button is-dark">-10khz</button>
+                            <button onclick="setReceiverAddTick()" class="button is-dark">+10khz</button>
+                        </div>
+                    </div>
+                    
                     <div class="field">
                         <label class="label">Frequency (Hz)</label>
                         <div class="control">
@@ -188,10 +200,9 @@
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_bw">
-                                    <option value="52">LORA_BW_0200</option>
-                                    <option value="38">LORA_BW_0400</option>
-                                    <option value="24">LORA_BW_0800</option>
-                                    <option value="10">LORA_BW_1600</option>
+                                    <option value="13">LORA_BW_0200</option>
+                                    <option value="14">LORA_BW_0400</option>
+                                    <option value="15">LORA_BW_0800</option>
                                 </select>
                             </div>
                         </div>
@@ -202,14 +213,14 @@
                         <div class="control">
                             <div class="select">
                                 <select id="rcv_sf">
-                                    <option value="80">LORA_SF5</option>
-                                    <option value="96">LORA_SF6</option>
-                                    <option value="112">LORA_SF7</option>
-                                    <option value="128">LORA_SF8</option>
-                                    <option value="144">LORA_SF9</option>
-                                    <option value="160">LORA_SF10</option>
-                                    <option value="176">LORA_SF11</option>
-                                    <option value="192">LORA_SF12</option>
+                                    <option value="5">LORA_SF5</option>
+                                    <option value="6">LORA_SF6</option>
+                                    <option value="7">LORA_SF7</option>
+                                    <option value="8">LORA_SF8</option>
+                                    <option value="9">LORA_SF9</option>
+                                    <option value="10">LORA_SF10</option>
+                                    <option value="11">LORA_SF11</option>
+                                    <option value="12">LORA_SF12</option>
                                 </select>
                             </div>
                         </div>
@@ -235,7 +246,8 @@
                             <input id="lnb_volt" class="checkbox" type="checkbox">
                         </div>
                     </div>
-
+                    
+                    <!--
                     <div class="field">
                         <label class="label">LO frequency (MHz)</label>
                         <div class="control">
@@ -265,6 +277,7 @@
                             <input id="lo_en" class="checkbox" type="checkbox">
                         </div>
                     </div>
+                -->
 
                     <div class="field">
                         <label class="label">Enable diseq (22kHz)</label>
@@ -374,6 +387,7 @@
                             <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
                             <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
                             <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
+                            <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
                         </div>
                     </div>
                     <div class="column is-3">
@@ -427,6 +441,7 @@
             <div class="container">
                 <div class="content has-text-centered">
                     <p><strong><a href="https://othernet.is">Othernet.is</a> Dreamcatcher 4</strong> - Contribute on Github: <a href="https://github.com/Othernet-Project/Dreamcatcher">DC4 Firmware</a></p>
+                    <p>Devicetime: <span id="stats_time"></span> - <a href="/files/log/log.txt">View local Log</a></p>
                 </div>
             </div>
         </footer>

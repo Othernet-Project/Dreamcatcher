@@ -54,7 +54,16 @@ void lnbStatus()
     Wire.endTransmission();
     Wire.requestFrom((uint8_t)lnbAddr, (uint8_t)1);
     detectedLNB = Wire.read(); // bit1 - connected, bit5 - LDO_ON, bit0 - in range, bit3 - OCP, bit4 - termal prot
-    switch ((_v & 0x1E) >> 1)
+
+    int lnbVoltBitmask = 30;
+
+    if(bEnableDiseq) {
+      lnbVoltBitmask = 46;
+    } else {
+      lnbVoltBitmask = 78;
+    }
+
+    switch ((_v & lnbVoltBitmask) >> 1)
     {
       case 0x0:
         voltage = 11.0;
@@ -105,7 +114,7 @@ void lnbStatus()
         voltage = 20.0;
         break;
     }
-    log_d("reg: %d, value: %d\n", 0x02, detectedLNB);
+    //Serial.printf("reg: %d, value: %d\n", 0x02, detectedLNB);
     if(!detectedLNB && bEnableLNB) enableLNB();
   }
 }
@@ -124,7 +133,12 @@ extern "C" void enableLNB()
     Wire.write((uint8_t)0x0);
     if (bEnableLNB)
     {
-      Wire.write((uint8_t)138);
+      // check if 22khz is wanted and set over i2c
+      if(bEnableDiseq){
+        Wire.write((uint8_t)186);
+      } else {
+        Wire.write((uint8_t)154);
+      }
     }
     else
     {
@@ -166,9 +180,10 @@ extern "C" void enableLO(bool en, uint8_t id)
 
 extern "C" void enable22kHz(bool en)
 {
-  gpio_set_level(TPS_EXTM, 0);
+  /*gpio_set_level(TPS_EXTM, 0);
   vTaskDelay(100);
   gpio_set_level(TPS_EXTM, en);
   bEnableDiseq = en;
   log_i("diseq: %d", bEnableDiseq);
+*/
 }

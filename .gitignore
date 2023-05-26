@@ -3,3 +3,5 @@ build/*
 build.esp32/*
 build.esp32s2/*
 sdkconfig.old
+.DS_Store
+dependencies.lock

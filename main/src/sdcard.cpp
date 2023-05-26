@@ -3,6 +3,7 @@
 #include <driver/sdspi_host.h>
 #include <driver/sdmmc_types.h>
 #include <driver/sdspi_host.h>
+#include "driver/sdmmc_host.h"
 #include <esp_spiffs.h>
 #include <esp_vfs_fat.h>
 #include <sdmmc_cmd.h>
@@ -23,6 +24,26 @@ struct dirent *entry;
 struct stat entry_stat;
 static size_t spiffstotal = 0, spiffsused = 0;
 
+static const char *TAG = "sd_card";
+
+// saves a String to a Log File
+bool logToFile(char *logText){
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    int openRt = open( "/files/log/log.txt", O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR );
+
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"[%02d.%02d.%d - %02d:%02d:%02d] %s", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, logText);
+
+    write(openRt, newLogEntry, strlen(newLogEntry));
+    write(openRt, "\r\n", strlen("\r\n"));
+    close(openRt);
+    return true;
+}
+
 esp_err_t initSDcard()
 {
     pinMode(SD_CS, OUTPUT); //VSPI SS
@@ -33,15 +54,15 @@ esp_err_t initSDcard()
     sdmmc_card_t *sd_card;
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.flags = SDMMC_HOST_FLAG_SPI | SDMMC_HOST_FLAG_DEINIT_ARG | SDMMC_HOST_FLAG_1BIT;
-    //host.max_freq_khz = 10000;
+    host.max_freq_khz = SDMMC_FREQ_DEFAULT;
     sdspi_device_config_t sd_slot = SDSPI_DEVICE_CONFIG_DEFAULT(); // TODO
     sd_slot.gpio_cs = SD_CS;
     sd_slot.host_id = (spi_host_device_t)host.slot;
 
     esp_vfs_fat_sdmmc_mount_config_t sd_cfg = {
         .format_if_mount_failed = true,
-        .max_files = 10,
-        .allocation_unit_size = 4 * 1024};
+        .max_files = 16,
+        .allocation_unit_size = 16 * 1024};
 
     // on ESP32-S2, DMA channel must be the same as host id
     #define SPI_DMA_CHAN host.slot
@@ -51,10 +72,10 @@ esp_err_t initSDcard()
     bus_cfg.miso_io_num = SD_MISO,
     bus_cfg.sclk_io_num = SD_SCK,
     bus_cfg.quadwp_io_num = -1,
-    bus_cfg.quadhd_io_num = -1,
-    bus_cfg.max_transfer_sz = 4 * 1024;
+    bus_cfg.quadhd_io_num = -1;
+    //bus_cfg.max_transfer_sz = 4 * 1024;
 
-    esp_err_t err = spi_bus_initialize((spi_host_device_t)host.slot, &bus_cfg, SPI_DMA_CHAN);
+    esp_err_t err = spi_bus_initialize((spi_host_device_t)host.slot, &bus_cfg, SPI_DMA_CH_AUTO);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to initialize bus.");
@@ -84,8 +105,14 @@ esp_err_t initSDcard()
         }
         log_i("[FS] SD will be used for persistent storage.");
         mkdir("/files/tmp", 0755);
+        //add log folder to SD card if it doesen't exist already
+        mkdir("/files/log", 0755);
         pdrv = fs->pdrv;
     }
+
+    //sdmmc_card_print_info(stdout, sd_card);
+    Serial.print("SD card err var: ");
+    Serial.println(err);
 
     return err;
 }
@@ -122,7 +149,7 @@ esp_err_t initSPIFFS()
     // return ESP_OK;
 
 
-    log_i("Initializing SPIFFS");
+    Serial.println("Initializing SPIFFS");
 
     esp_vfs_spiffs_conf_t conf = {
       .base_path = VFS_MOUNT,
@@ -137,20 +164,20 @@ esp_err_t initSPIFFS()
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+            Serial.println("Failed to mount or format filesystem");
         } else if (ret == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+            Serial.println("Failed to find SPIFFS partition");
         } else {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+            Serial.printf("Failed to initialize SPIFFS (%s) \n", esp_err_to_name(ret));
         }
         return ret;
     }
 
     ret = esp_spiffs_info(conf.partition_label, &spiffstotal, &spiffsused);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        Serial.printf("Failed to get SPIFFS partition information (%s) \n", esp_err_to_name(ret));
     } else {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", spiffstotal, spiffsused);
+        Serial.printf("Partition size: total: %d, used: %d \n", spiffstotal, spiffsused);
     }
 
     cleanup();
@@ -164,7 +191,7 @@ extern "C" esp_err_t formatSD()
     esp_err_t err = ESP_OK;
     const size_t workbuf_size = 4096;
     void *workbuf = NULL;
-    ESP_LOGW(TAG, "partitioning card");
+    Serial.println("partitioning card");
 
     workbuf = ff_memalloc(workbuf_size);
     if (workbuf == NULL)
@@ -182,17 +209,19 @@ extern "C" esp_err_t formatSD()
     else
     {
         size_t alloc_unit_size = 512;
+        char drv[3] = {'0', ':', 0};
         ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-        res = f_mkfs("", FM_FAT, alloc_unit_size, workbuf, workbuf_size);
+        res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
         if (res != FR_OK)
         {
             err = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
         }
     }
-    mkdir("/files/tmp", 0755); // add tmp folder
+    mkdir("/files/tmp", 0755);  // add tmp folder
+    mkdir("/files/log", 0755);  // add log folder
 
-    ESP_LOGW(TAG, "partitioning card finished");
+    Serial.println("partitioning card finished");
     free(workbuf);
     return err;
 }

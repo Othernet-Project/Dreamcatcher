@@ -3,13 +3,12 @@
 #pragma once
 
 #include <SPI.h>                                               //the lora device is SPI based so load the SPI library                                         
-//#include <SX128XLT.h>                                          //include the appropriate library  
-#include "../lr1110_driver/lr1110_system.h"
-#include "../lr1110_driver/lr1110_hal.h"
-#include "../lr1110_driver/lr1110_radio.h"
-#include "../lr1110_driver/lr1110_regmem.h"
-#include "../lr1110_driver/lr1110_wifi.h"
-#include "../lr1110_driver/lr1110_radio_types.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_system.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_hal.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_radio.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_regmem.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_wifi.h"
+#include "../../components/LR11XX-Driver/src/lr11xx_radio_types.h"
 #include "settings.h"                                          //include the setiings file, frequencies, LoRa settings etc   
 
 extern uint8_t TXPacketL;
