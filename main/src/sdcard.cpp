@@ -26,6 +26,24 @@ static size_t spiffstotal = 0, spiffsused = 0;
 
 static const char *TAG = "sd_card";
 
+// saves a String to a Log File
+bool logToFile(char *logText){
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    int openRt = open( "/files/log/log.txt", O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR );
+
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"[%02d.%02d.%d - %02d:%02d:%02d] %s", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, logText);
+
+    write(openRt, newLogEntry, strlen(newLogEntry));
+    write(openRt, "\r\n", strlen("\r\n"));
+    close(openRt);
+    return true;
+}
+
 esp_err_t initSDcard()
 {
     pinMode(SD_CS, OUTPUT); //VSPI SS
@@ -87,6 +105,8 @@ esp_err_t initSDcard()
         }
         log_i("[FS] SD will be used for persistent storage.");
         mkdir("/files/tmp", 0755);
+        //add log folder to SD card if it doesen't exist already
+        mkdir("/files/log", 0755);
         pdrv = fs->pdrv;
     }
 
@@ -171,7 +191,7 @@ extern "C" esp_err_t formatSD()
     esp_err_t err = ESP_OK;
     const size_t workbuf_size = 4096;
     void *workbuf = NULL;
-    ESP_LOGW(TAG, "partitioning card");
+    Serial.println("partitioning card");
 
     workbuf = ff_memalloc(workbuf_size);
     if (workbuf == NULL)
@@ -189,17 +209,19 @@ extern "C" esp_err_t formatSD()
     else
     {
         size_t alloc_unit_size = 512;
+        char drv[3] = {'0', ':', 0};
         ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-        res = f_mkfs("", FM_FAT, alloc_unit_size, workbuf, workbuf_size);
+        res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
         if (res != FR_OK)
         {
             err = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
         }
     }
-    mkdir("/files/tmp", 0755); // add tmp folder
+    mkdir("/files/tmp", 0755);  // add tmp folder
+    mkdir("/files/log", 0755);  // add log folder
 
-    ESP_LOGW(TAG, "partitioning card finished");
+    Serial.println("partitioning card finished");
     free(workbuf);
     return err;
 }

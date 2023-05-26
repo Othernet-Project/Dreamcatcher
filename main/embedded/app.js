@@ -236,6 +236,8 @@ function updateStats(jsnStats) {
     document.getElementById('stats_lnbcon').innerText = (jsnStats.ldo&0x02)>0?'YES':'NO';
     document.getElementById('stats_lnbv').innerText = jsnStats.volt;
     document.getElementById('stats_offset').innerText = jsnStats.offset;    
+    
+    document.getElementById('stats_time').innerText = jsnStats.tstamp;    
 }
 
 // Receiver Preset/Increment Freq functions
