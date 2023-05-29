@@ -190,6 +190,10 @@ class mycallback : public carousel::callback {
     Serial.printf("file progress: %d of %d bytes\n", index, count);
     filepacket = index;
     filepackets = count;
+
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"file progress: %d of %d bytes", index, count);
+    logToFile(newLogEntry);    
   }
 };
 
