@@ -550,6 +550,19 @@ static esp_err_t format_card_handler(httpd_req_t *req)
 }
 
 /**
+ * Function to trigger Logfile Cleanup
+ * 
+ */
+void clearLogs();
+static esp_err_t clear_logs_handler(httpd_req_t *req)
+{
+    clearLogs();
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
  * Function to factory reset device
  */
 esp_err_t setDefaults();
@@ -557,6 +570,19 @@ static esp_err_t factory_reset_handler(httpd_req_t *req)
 {
     vTaskDelay(1000);
     setDefaults();
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * Function to reboot the device
+ */
+void rebootDevice();
+static esp_err_t reboot_handler(httpd_req_t *req)
+{
+    vTaskDelay(1000);
+    rebootDevice();
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
@@ -896,6 +922,22 @@ void web_server()
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &format);
+
+    httpd_uri_t clear_logs = {
+        .uri       = "/clearlogs",
+        .method    = HTTP_POST,
+        .handler   = clear_logs_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &clear_logs);
+
+    httpd_uri_t reboot = {
+        .uri       = "/reboot",
+        .method    = HTTP_POST,
+        .handler   = reboot_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &reboot);
     
         httpd_uri_t freset = {
         .uri       = "/freset",

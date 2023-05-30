@@ -31,7 +31,6 @@
         
                 <div class="navbar-item has-dropdown is-hoverable">
                     <p class="navbar-link">Settings</p>
-            
                     <div class="navbar-dropdown">
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
@@ -46,6 +45,15 @@
                 <div class="tags are-medium">
                     <span id="con_status" class="tag is-light">Connecting...</a>
                 </div>
+                </div>
+                <div class="navbar-item">
+                    <button onclick="reboot()" id="btn_reboot" class="button is-dark">
+                        <span class="icon is-large">
+                            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"></path>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
             </div>
             </div>
@@ -429,6 +437,7 @@
                 <div class="container">
                     <div class="buttons">
                         <button onclick="formatSd()" id="btn_formatsd" class="button is-danger">Format SD Card</button>
+                        <button onclick="clearLogs()" id="btn_clearlogs" class="button is-danger">Clear Logs</button>
                         <span id="md_filetree_status" class="is-pulled-right"></span>
                     </div>                    
                     <div id="filestree" class="columns is-multiline"></div>
@@ -441,7 +450,7 @@
             <div class="container">
                 <div class="content has-text-centered">
                     <p><strong><a href="https://othernet.is">Othernet.is</a> Dreamcatcher 4</strong> - Contribute on Github: <a href="https://github.com/Othernet-Project/Dreamcatcher">DC4 Firmware</a></p>
-                    <p>Devicetime: <span id="stats_time"></span> - <a href="/files/log/log.txt">View local Log</a></p>
+                    <p>Devicetime: <span id="stats_time"></span> - <a href="/files/log/log.txt">View Log</a> | <a href="/files/log/log.txt" download>Download Log</a></p>
                 </div>
             </div>
         </footer>

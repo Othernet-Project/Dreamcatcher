@@ -124,6 +124,18 @@ void setup()
   Serial.print("Ram size: ");
   Serial.println(heap_caps_get_total_size(MALLOC_CAP_SPIRAM));
 
+  Serial.println("SD Cards next");
+  sdCardPresent = true;
+  if(initSDcard() != ESP_OK) {
+    sdCardPresent = false;
+
+    Serial.println("NO SD Card, trying SPIFFS");
+   /*if(initSPIFFS() != ESP_OK) {
+      log_e("error to init sd card and spiffs storage");
+      Serial.println("Error on SPIFFS Init");
+    }*/
+  }
+
   // enable RF section
   gpio_reset_pin((gpio_num_t)RF_PWR);
   gpio_set_direction((gpio_num_t)RF_PWR, GPIO_MODE_OUTPUT);
@@ -155,18 +167,6 @@ void setup()
 
   send_tlm = xSemaphoreCreateBinary();
   xTaskCreate(&send_telemetry, "telemetry", 8 * 1024,NULL,5,NULL);
-
-  Serial.println("SD Cards next");
-  sdCardPresent = true;
-  if(initSDcard() != ESP_OK) {
-    sdCardPresent = false;
-
-    Serial.println("NO SD Card, trying SPIFFS");
-   /*if(initSPIFFS() != ESP_OK) {
-      log_e("error to init sd card and spiffs storage");
-      Serial.println("Error on SPIFFS Init");
-    }*/
-  }
   
   if(bWire) enableLNB(); // enable VLNB
   //enable22kHz(bEnableDiseq);   // switch LNB to high band if needed

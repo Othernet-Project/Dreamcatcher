@@ -85,6 +85,15 @@ void storeLoraSettings()
   prefs.end();
 }
 
+void rebootDevice()
+{
+  Serial.println("Rebooting Device on Users request...");
+  char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+  sprintf(newLogEntry,"Restarting Device on Users request, Uptime: %lus", millis()/1000);
+  logToFile(newLogEntry);
+  ESP.restart();
+}
+
 void setDefaults()
 {
   prefs.begin("lora", false);
