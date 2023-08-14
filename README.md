@@ -9,26 +9,27 @@ The ESP32 can create a wifi access point and also connect to an existing wifi ne
 # Getting started
 
 This application is prepared to build with arduino as component. Easiest way is to clone with `git clone --recursive`.
-Because most recent arduino release (v4.x) is in beta stage this application was prepared and tested with particular esp-idf commit. Curently it is https://github.com/espressif/esp-idf/commit/220590d599e134d7a5e7f1e683cc4550349ffbf8
+Because the arduino release only supports ep-idf up to 4.x version please don't use 5.x releases, they don't work yet.
 
 Some settings can be changed in `customize.h`.
 
 ## Building on Ubuntu/Debian
-To setup everything and build the Dreamcatcher 4 Firmware you can follow the following Steps on Ubuntu/Debian (tested on Ubuntu 18.04 and 20.04).
+To setup everything and build the Dreamcatcher Firmware you can follow the following Steps on Ubuntu/Debian (tested on Ubuntu 18.04 and 20.04).
 
 ### Install needed packages & Setup python 3 as default
 ```
 sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10 && alias pip=pip3
 ```
-### Install esp-idf at Commit 220590d599e134d7a5e7f1e683cc4550349ffbf8
+### Install esp-idf 4.4.5
+
+https://docs.espressif.com/projects/esp-idf/en/v4.4.5/esp32/get-started/index.html
+
 ```
 mkdir -p ~/esp
 cd ~/esp
-git clone https://github.com/espressif/esp-idf.git
-cd esp-idf,
-git checkout 220590d599e134d7a5e7f1e683cc4550349ffbf8
-git submodule update --init --recursive
+git clone -b v5.1 --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
 ./install.sh
 ```
 ### Prepare Dreamcatcher Firmware
