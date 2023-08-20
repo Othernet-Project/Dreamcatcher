@@ -145,10 +145,18 @@ void wifi_init_sta(char* ssid, char* pass)
     WiFi.onEvent(onWiFiEvent);
 
     int connectTrys = 0;
-    while((WiFiMulti.run()) != WL_CONNECTED && connectTrys < 30) {
-        Serial.print(".");
-        delay(500);
+    while(connectTrys < 30) {
         connectTrys++;
+        if(WiFiMulti.run() == WL_CONNECTED){
+            Serial.print("Connected :)");
+            sprintf(newLogEntry,"Connected :)");
+            break;
+        } else {
+            Serial.print(".");
+            sprintf(newLogEntry,".");
+        }  
+        logToFile(newLogEntry);
+        delay(500);
     }
     Serial.print("WiFi connected - ");
     Serial.print("IP address: ");

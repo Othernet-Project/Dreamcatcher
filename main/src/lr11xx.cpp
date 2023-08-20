@@ -495,10 +495,13 @@ void rxTaskLR11xx(void* p)
 
         RXPacketL = readbufferlr11xx(data, RXBUFFER_SIZE);
 
+        // to avoid missing packets set radi back to RX before processing
+        lr11xx_radio_set_rx( &lrRadio, 0);
+
         //Serial.printf("RX Buffer (len: %i): \n", RXPacketL);
         //Serial.println((char*)data);
 
-        //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,164), 8280);
+        //udp.writeTo(data, RXPacketL, IPAddress(192,168,0,174), 8280);
 
         //xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
         xSemaphoreGive(blink_rx);
@@ -543,6 +546,7 @@ void rxTaskLR11xx(void* p)
         }
       
         if(RXPacketL > 0) {
+          //Serial.printf("RX Payload Size: %02x %02x %02x %02x %02x %02x %02x %02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
           //Serial.println("Consume data check");
           if (!isFormatting) {            // stop consuming data during sd card formatting to not access card
             if (!sdCardPresent)
@@ -574,7 +578,7 @@ void rxTaskLR11xx(void* p)
         Serial.println("LR11XX_SYSTEM_IRQ_PREAMBLE_DETECTED");
       }*/
 
-      lr11xx_radio_set_rx( &lrRadio, 0);
+      //lr11xx_radio_set_rx( &lrRadio, 0);
       //Serial.println("Set Radio back to RX");
     }
   }
