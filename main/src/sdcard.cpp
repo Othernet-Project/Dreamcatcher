@@ -26,6 +26,8 @@ static size_t spiffstotal = 0, spiffsused = 0;
 
 static const char *TAG = "sd_card";
 
+static const char *LOG_PATH = "/files/log/log.txt";
+
 // saves a String to a Log File
 bool logToFile(char *logText){
     time_t now;
@@ -33,7 +35,7 @@ bool logToFile(char *logText){
     time(&now);
     localtime_r(&now, &timeinfo);
 
-    int openRt = open( "/files/log/log.txt", O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR );
+    int openRt = open( LOG_PATH, O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR );
 
     char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
     sprintf(newLogEntry,"[%02d.%02d.%d - %02d:%02d:%02d] %s", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, logText);
@@ -138,6 +140,12 @@ void cleanup()
         entry = readdir(dir);
     }
     closedir(dir);
+}
+
+void clearLogs()
+{
+    Serial.println("Clearing Logfile...");
+    unlink(LOG_PATH);
 }
 
 esp_err_t initSPIFFS()

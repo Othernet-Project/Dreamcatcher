@@ -64,6 +64,8 @@ IRAM_ATTR void rxTxISR();
 
 void lrSendData();
 
+void clearLogs();
+
 void loadSettings();
 void storeLoraSettings();
 void storeWifiCredsAP(char* ssid, char* pass);
@@ -73,6 +75,7 @@ uint16_t countBitrate(uint16_t update);
 float countPktrate(uint16_t update);
 void vTaskGetRunTimeStats2();
 void setDefaults();
+void rebootDevice();
 extern xQueueHandle rxQueue;
 
 #ifdef __cplusplus

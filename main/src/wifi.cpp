@@ -9,6 +9,7 @@
 #include "esp_vfs.h"
 #include <esp_vfs_fat.h>
 #include "esp_sntp.h"
+#include "settings.h"
 
 extern bool sdCardPresent;
 extern SemaphoreHandle_t send_tlm;
@@ -16,14 +17,12 @@ static const char *TAG = "wifi";
 
 WiFiMulti WiFiMulti;
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                    int32_t event_id, void* event_data)
-{
-
-}
-
 void initWifi(char* ssid_ap, char* pass_ap)
 {
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"WIFI AP initialization, Uptime: %lus", millis()/1000);
+    logToFile(newLogEntry);
+
     WiFi.mode(WIFI_MODE_APSTA);
     wifi_init_softap(ssid_ap, pass_ap);
 }
@@ -36,20 +35,135 @@ void wifi_init_softap(char* ssid, char* pass)
     Serial.println(WiFi.softAPIP());
 }
 
+void onWiFiEvent(WiFiEvent_t event)
+{
+    String eventInfo = "No Info";
+
+    switch (event) {
+        case ARDUINO_EVENT_WIFI_READY: 
+            eventInfo = "WiFi interface ready";
+            break;
+        case ARDUINO_EVENT_WIFI_SCAN_DONE:
+            eventInfo = "Completed scan for access points";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_START:
+            eventInfo = "WiFi client started";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_STOP:
+            eventInfo = "WiFi clients stopped";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+            eventInfo = "Connected to access point";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+            eventInfo = "Disconnected from WiFi access point";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
+            eventInfo = "Authentication mode of access point has changed";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+            eventInfo = "Obtained IP address";
+            //Serial.println(WiFi.localIP());
+            break;
+        case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+            eventInfo = "Lost IP address and IP address is reset to 0";
+            break;
+        case ARDUINO_EVENT_WPS_ER_SUCCESS:
+            eventInfo = "WiFi Protected Setup (WPS): succeeded in enrollee mode";
+            break;
+        case ARDUINO_EVENT_WPS_ER_FAILED:
+            eventInfo = "WiFi Protected Setup (WPS): failed in enrollee mode";
+            break;
+        case ARDUINO_EVENT_WPS_ER_TIMEOUT:
+            eventInfo = "WiFi Protected Setup (WPS): timeout in enrollee mode";
+            break;
+        case ARDUINO_EVENT_WPS_ER_PIN:
+            eventInfo = "WiFi Protected Setup (WPS): pin code in enrollee mode";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_START:
+            eventInfo = "WiFi access point started";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STOP:
+            eventInfo = "WiFi access point  stopped";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+            eventInfo = "Client connected";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+            eventInfo = "Client disconnected";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+            eventInfo = "Assigned IP address to client";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
+            eventInfo = "Received probe request";
+            break;
+        case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
+            eventInfo = "AP IPv6 is preferred";
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+            eventInfo = "STA IPv6 is preferred";
+            break;
+        case ARDUINO_EVENT_ETH_GOT_IP6:
+            eventInfo = "Ethernet IPv6 is preferred";
+            break;
+        case ARDUINO_EVENT_ETH_START:
+            eventInfo = "Ethernet started";
+            break;
+        case ARDUINO_EVENT_ETH_STOP:
+            eventInfo = "Ethernet stopped";
+            break;
+        case ARDUINO_EVENT_ETH_CONNECTED:
+            eventInfo = "Ethernet connected";
+            break;
+        case ARDUINO_EVENT_ETH_DISCONNECTED:
+            eventInfo = "Ethernet disconnected";
+            break;
+        case ARDUINO_EVENT_ETH_GOT_IP:
+            eventInfo = "Obtained IP address";
+            break;
+        default: break;
+    }
+    Serial.print("WIFI-Event: ");
+    Serial.println(eventInfo);
+
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+    sprintf(newLogEntry,"WIFI-Event: %s", eventInfo.c_str());
+    logToFile(newLogEntry);
+}
+
 void wifi_init_sta(char* ssid, char* pass)
 {
+    char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
+
     WiFiMulti.addAP(ssid, pass);
 
-    Serial.print("Connecting to WiFi Network... ");
+    Serial.println("Connecting to WiFi Network... ");
+    sprintf(newLogEntry,"WIFI Client enabled, Connecting...");
+    logToFile(newLogEntry);
+
+    WiFi.onEvent(onWiFiEvent);
+
     int connectTrys = 0;
-    while((WiFiMulti.run()) != WL_CONNECTED && connectTrys < 30) {
-        Serial.print(".");
-        delay(500);
+    while(connectTrys < 30) {
         connectTrys++;
+        if(WiFiMulti.run() == WL_CONNECTED){
+            Serial.print("Connected :)");
+            sprintf(newLogEntry,"Connected :)");
+            break;
+        } else {
+            Serial.print(".");
+            sprintf(newLogEntry,".");
+        }  
+        logToFile(newLogEntry);
+        delay(500);
     }
     Serial.print("WiFi connected - ");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    sprintf(newLogEntry,"Connected to WIFI, RSSI: %d, Got IP: %s", WiFi.RSSI() ,WiFi.localIP().toString().c_str());
+    logToFile(newLogEntry);
 
     // connected to wifi and maybe internet, try to set device time over ntp
     time_t now;
