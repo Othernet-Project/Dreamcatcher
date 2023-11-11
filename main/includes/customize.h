@@ -2,7 +2,7 @@
 #include "sdkconfig.h"
 
 #define HW_VERSION "2023.01"
-#define FW_VERSION "1.0.6"
+#define FW_VERSION "1.0.7"
 
 #define EXAMPLE_ESP_WIFI_SSID      "Othernet"
 #define EXAMPLE_ESP_WIFI_PASS      "othernet"
