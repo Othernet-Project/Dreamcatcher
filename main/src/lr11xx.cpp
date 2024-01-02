@@ -391,9 +391,14 @@ extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_
   mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
   mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
 
+  Serial.println("Starting Freq Change");
+  unsigned long startMillis = micros();
   lr11xx_radio_set_lora_mod_params(&lrRadio, &mod_params);
   lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
   lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
+  unsigned long timetook = micros() - startMillis;
+  Serial.print("Freq Change done: ");
+  Serial.println(timetook);
 
   storeLoraSettings();
 }

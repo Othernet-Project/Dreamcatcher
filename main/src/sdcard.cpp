@@ -148,6 +148,35 @@ void clearLogs()
     unlink(LOG_PATH);
 }
 
+void clearTmp()
+{
+    Serial.println("Clearing Tmp files...");
+    char tmppath[265] = "/files/tmp/";
+
+    char _dirpath[255] = {0};
+    const size_t dirpath_len = strlen(tmppath);
+    strncpy(_dirpath, tmppath, 255);
+    _dirpath[dirpath_len - 1] = 0x0;
+    DIR *dir = opendir(_dirpath);
+
+    if (!dir) {
+        Serial.println("TMP Cleanup...ERROR opening dir");
+        return;
+    }
+    entry = readdir(dir);
+    
+    Serial.println("TMP Cleanup...Loop starting");
+    while (entry != NULL) {
+        strcpy(tmppath + 11, entry->d_name);
+        unlink(tmppath);
+        Serial.print("Cleanup file: ");
+        Serial.println(tmppath);
+        entry = readdir(dir);
+    }
+    closedir(dir);
+    Serial.println("Clearing Tmp files done.");
+}
+
 esp_err_t initSPIFFS()
 {
     // if(!SPIFFS.begin(true, VFS_MOUNT)){
