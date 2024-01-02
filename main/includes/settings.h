@@ -65,6 +65,7 @@ IRAM_ATTR void rxTxISR();
 void lrSendData();
 
 void clearLogs();
+void clearTmp();
 
 void loadSettings();
 void storeLoraSettings();

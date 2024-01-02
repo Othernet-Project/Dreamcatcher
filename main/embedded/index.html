@@ -28,6 +28,7 @@
             <div class="navbar-start">
                 <a onclick="toggleTab('','','.tabs_main','main_dash')" class="navbar-item">Dashboard</a>
                 <a onclick="toggleTab('','','.tabs_main','main_files')"class="navbar-item">Files</a>
+                <a onclick="toggleTab('','','.tabs_main','main_messages')"class="navbar-item">Messages</a>
         
                 <div class="navbar-item has-dropdown is-hoverable">
                     <p class="navbar-link">Settings</p>
@@ -41,11 +42,6 @@
             </div>
         
             <div class="navbar-end">
-                <div class="navbar-item">
-                <div class="tags are-medium">
-                    <span id="con_status" class="tag is-light">Connecting...</a>
-                </div>
-                </div>
                 <div class="navbar-item">
                     <button onclick="reboot()" id="btn_reboot" class="button is-dark">
                         <span class="icon is-large">
@@ -313,13 +309,9 @@
             <div class="modal-background"></div>
             <div class="modal-content is-fullwidth">
                 <div class="box">
-                    <h3 class="subtitle">File Viewer<span id="md_fileview_status" class="is-pulled-right"></span></h3>
-                        <iframe id="data">No data Yet...</iframe>                    
-                    <div class="field is-grouped pt-4">
-                        <div class="control">
-                            <button onclick="toggleModal('md_fileview')" class="button is-dark">Close</button>
-                        </div>
-                    </div>
+                    <h3 class="subtitle">File Viewer<div class="is-pulled-right"><span id="md_fileview_status" class="is-pulled-right"></span><button onclick="toggleModal('md_fileview')" class="button is-dark is-pulled-right">Close</button></div></h3>
+                        <div id="data_inline"></div>
+                        <iframe id="data"></iframe>                    
                 </div>
             </div>
         </div>
@@ -338,80 +330,101 @@
 
         <section class="section">
             <div class="container">
-                <div class="columns is-multiline">
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Device Information</h3>
-                            <p>Hardware Version: <span id="stats_hw" class="is-pulled-right">-</span></p>
-                            <p>Firmware Version: <span id="stats_fw" class="is-pulled-right">-</span></p>
-                            <p>IP Address: <span id="info_ip" class="is-pulled-right">-</span></p>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Memory Status</h3>
-                            <p>Free Heap <span id="stats_heap" class="is-pulled-right">-</span></p>
-                            <p>Min Free heap <span id="stats_minheap" class="is-pulled-right">-</span></p>
-                            <p>Free SPIram <span id="stats_psram" class="is-pulled-right">-</span></p>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">SD Card Status</h3>
-                            <p>Capacity <span id="stats_sdcap" class="is-pulled-right">-</span></p>
-                            <p>Free <span id="stats_sdfree" class="is-pulled-right">-</span></p>
-                            <p>Used <span id="stats_sdused" class="is-pulled-right">-</span></p>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">CPU Load</h3>
-                            <p class="is-size-2"><span id="stats_cpu">-</span>%</p>
-                            <progress id="stats_cpubar" class="progress is-primary" value="0" max="100"></progress>
-                        </div>
-                    </div>
 
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">LNB Status</h3>
-                            <p>LNB enabled <span id="stats_lnben" class="is-pulled-right">-</span></p>
-                            <p>LNB in range <span id="stats_lnbir" class="is-pulled-right">-</span></p>
-                            <p>LNB connected <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
-                            <p>LNB voltage <span id="stats_lnbv" class="is-pulled-right">-</span></p>
-                            <p>FREQ offset <span id="stats_offset" class="is-pulled-right">-</span></p>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
-                            <p id="stats_snr" class="is-size-2">-</p>
-                            <small class="has-text-weight-bold has-text-grey">SNR</small>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Stats</h3>
-                            <p>RSSI<span id="stats_rssi" class="is-pulled-right">-</span></p>
-                            <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
-                            <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
-                            <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
-                            <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
-                        </div>
-                    </div>
-                    <div class="column is-3">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Realtime</h3>
-                            <button id="btn_play" onclick="toggleMidiStream()" class="button">Play</button>
-                            <br>
-                            <input type="range" id="volume" min="0" max="10" value="6">
-                            <p id="voltext">-12</p>
+                <div class="columns is-multiline">
+                    <div class="column is-6">
+                        <div class="columns is-multiline">
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Stats</h3>
+                                    <p>RSSI<span id="stats_rssi" class="is-pulled-right">-</span></p>
+                                    <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
+                                    <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
+                                    <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
+                                    <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
+                                    <p id="stats_snr" class="is-size-2">-</p>
+                                    <small class="has-text-weight-bold has-text-grey">SNR</small>
+
+                                    <p><small id="stats_lora" class="has-text-grey">-</small></p>
+                                    <div class="is-flex pt-2">
+                                        <button onclick="receiverRemoveAndSaveTick()" class="button is-dark">-</button>
+                                        <p id="stats_freq" class="is-flex-grow-1 is-size-4 has-text-weight-bold has-text-grey has-text-centered">-</p>
+                                        <button onclick="receiverAddAndSaveTick()" class="button is-dark">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-full">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Current Download</h3>
+                                    <p>Name</p>
+                                    <p id="stats_file">-</p>
+                                    <br>
+                                    <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                                    <progress id="stats_progressbar" class="progress is-primary mt-2" value="0" max="100"></progress>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">LNB Status</h3>
+                                    <p>LNB enabled <span id="stats_lnben" class="is-pulled-right">-</span></p>
+                                    <p>LNB in range <span id="stats_lnbir" class="is-pulled-right">-</span></p>
+                                    <p>LNB connected <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
+                                    <p>LNB voltage <span id="stats_lnbv" class="is-pulled-right">-</span></p>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Device Information</h3>
+                                    <p>Hardware Version: <span id="stats_hw" class="is-pulled-right">-</span></p>
+                                    <p>Firmware Version: <span id="stats_fw" class="is-pulled-right">-</span></p>
+                                    <p>IP Address: <span id="info_ip" class="is-pulled-right">-</span></p>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Memory Status</h3>
+                                    <p>Free Heap <span id="stats_heap" class="is-pulled-right">-</span></p>
+                                    <p>Min Free heap <span id="stats_minheap" class="is-pulled-right">-</span></p>
+                                    <p>Free SPIram <span id="stats_psram" class="is-pulled-right">-</span></p>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">SD Card Status</h3>
+                                    <p>Capacity <span id="stats_sdcap" class="is-pulled-right">-</span></p>
+                                    <p>Free <span id="stats_sdfree" class="is-pulled-right">-</span></p>
+                                    <p>Used <span id="stats_sdused" class="is-pulled-right">-</span></p>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">CPU Load</h3>
+                                    <p class="is-size-2"><span id="stats_cpu">-</span>%</p>
+                                    <progress id="stats_cpubar" class="progress is-primary" value="0" max="100"></progress>
+                                </div>
+                            </div>
+        
+                            <div class="column is-half">
+                                <div class="notification p-4">
+                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Realtime</h3>
+                                    <button id="btn_play" onclick="toggleMidiStream()" class="button">Play</button>
+                                    <br>
+                                    <input type="range" id="volume" min="0" max="10" value="6">
+                                    <p id="voltext">-12</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="column is-6">
-                        <div class="notification">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">File info</h3>
-                            <p>Name<span id="stats_file" class="is-pulled-right">-</span></p>
-                            <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                        <div class="notification p-4">
+                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Messages</h3>
+                            <div id="messages_dash" style="height: 50rem; overflow-y: auto; word-break: break-word;"></div>
                         </div>
                     </div>
                 </div>
@@ -438,9 +451,36 @@
                     <div class="buttons">
                         <button onclick="formatSd()" id="btn_formatsd" class="button is-danger">Format SD Card</button>
                         <button onclick="clearLogs()" id="btn_clearlogs" class="button is-danger">Clear Logs</button>
+                        <button onclick="clearTmp()" id="btn_cleartmp" class="button is-danger">Clear TMP</button>
                         <span id="md_filetree_status" class="is-pulled-right"></span>
                     </div>                    
                     <div id="filestree" class="columns is-multiline"></div>
+                </div>
+            </section>
+
+        </div>
+
+        <div id="main_messages" class="tabs_main" style="display: none; min-height: calc(100vh - 5rem);">
+            <section class="hero is-primary is-bold"> 
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title">
+                            Messages
+                        </h1>
+                        <p class="subtitle">
+                            View the latest messages that were received
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="container">
+                    <div class="buttons">
+                        <button onclick="getMessages()" id="btn_formatsd" class="button is-danger">Refresh</button>
+                        <span id="md_filetree_status" class="is-pulled-right"></span>
+                    </div>                    
+                    <div id="messages"></div>
                 </div>
             </section>
 

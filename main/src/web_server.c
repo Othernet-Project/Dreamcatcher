@@ -413,6 +413,68 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     return httpd_queue_work(handle, ws_async_send, resp_arg);
 }
 
+static esp_err_t stats_handler(httpd_req_t *req)
+{
+    extern uint32_t packetsRX;
+    extern unsigned int filepacket;
+    extern unsigned int filepackets;
+    extern int detectedLNB;  // bit2 - connected, bit5 - LDO_ON, bit1 - in range
+    extern float voltage;
+    extern uint32_t bitrate;
+    extern uint8_t CPU_USAGE;
+    extern char filename[260];
+    extern uint16_t offset;
+
+    char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
+    uint64_t used_space = 0;
+    uint64_t max_space = 0;
+    getFreeSpace(&used_space, &max_space);
+
+    int8_t snr = 0, rssi = 0;
+    uint16_t crc = 0, header = 0;
+    getStats(&crc, &header);
+    getPacketStats(&rssi, &snr);
+
+    //get timestamp over local device time
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    char *tstamp = (char*) heap_caps_malloc(64, MALLOC_CAP_SPIRAM);
+    sprintf(tstamp,"%02d.%02d.%d - %02d:%02d:%02d", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+    sprintf(data, ws_json,
+        heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+        heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL),
+        heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+        HW_VERSION,
+        FW_VERSION,
+        packetsRX,
+        rssi,
+        snr,
+        crc,
+        header,
+        CPU_USAGE,
+        detectedLNB,
+        voltage,
+        offset,
+        bitrate,
+        filepacket + 1,
+        filepackets,
+        used_space,
+        max_space,
+        "path",
+        filename,
+        tstamp
+    );
+    
+    httpd_resp_sendstr_chunk(req, data);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
 /*
  * Websocket handler
  */
@@ -557,6 +619,19 @@ void clearLogs();
 static esp_err_t clear_logs_handler(httpd_req_t *req)
 {
     clearLogs();
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * Function to trigger TMP File Cleanup
+ * 
+ */
+void clearTmp();
+static esp_err_t clear_tmp_handler(httpd_req_t *req)
+{
+    clearTmp();
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
@@ -915,6 +990,14 @@ void web_server()
     };
     httpd_register_uri_handler(server, &wifi);
 
+    httpd_uri_t stats = {
+        .uri       = "/stats",
+        .method    = HTTP_GET,
+        .handler   = stats_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &stats);
+
     httpd_uri_t format = {
         .uri       = "/format",
         .method    = HTTP_POST,
@@ -930,6 +1013,14 @@ void web_server()
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &clear_logs);
+
+    httpd_uri_t clear_tmp = {
+        .uri       = "/cleartmp",
+        .method    = HTTP_POST,
+        .handler   = clear_tmp_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &clear_tmp);
 
     httpd_uri_t reboot = {
         .uri       = "/reboot",

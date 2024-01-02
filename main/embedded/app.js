@@ -109,25 +109,95 @@ function toggleTab(me, tabClass, contentClass, idToOpen) {
 
 // Init ajax
 const xhr = new XMLHttpRequest();
-    xhr.responseType = "json";
+xhr.responseType = "json";
 
-    xhr.addEventListener("load", e => {
-        if (xhr.status === 200) {
-            filestree(xhr.response);
-        }
-    });
+xhr.addEventListener("load", e => {
+    if (xhr.status === 200) {
+        filestree(xhr.response);
+    }
+});
 
-    xhr.addEventListener("error", e => {
-        // alert("Cant connect, use template");
+xhr.addEventListener("error", e => {
+    // alert("Cant connect, use template");
+    filestree(files_tree_json);
+});
+
+xhr.onreadystatechange = function() { // Call a function when the state changes.
+    if (this.readyState === XMLHttpRequest.DONE && this.status === 404) {
+        // Request finished. Do processing here.
         filestree(files_tree_json);
-    });
+    }
+}
 
-    xhr.onreadystatechange = function() { // Call a function when the state changes.
-        if (this.readyState === XMLHttpRequest.DONE && this.status === 404) {
-            // Request finished. Do processing here.
-            filestree(files_tree_json);
+function synchronousRequest(url) {
+    const syncXhr = new XMLHttpRequest();
+    syncXhr.open('GET', url, false);
+    syncXhr.send(null);
+    if (syncXhr.status === 200) {
+       return syncXhr.responseText;
+    } else {
+       throw new Error('Request failed: ' + syncXhr.statusText);
+    }
+ }
+
+// get newest messages from backend
+async function getMessages() {
+    console.log('getMessages started....')
+
+    let folders = JSON.parse(synchronousRequest('/files/messages/'))
+    folders.reverse()
+
+    let files = []
+    for (const folder of folders) {
+        let newFiles = JSON.parse(synchronousRequest(folder.path+'/'))
+        files = files.concat(newFiles)
+        if (files.length >= 4) {
+            files.reverse()
+            files = files.slice(0, 4)
+            break
         }
     }
+    
+    let msgList = '<table class="table is-fullwidth"><thead><tr><th style="width:7rem">Call</th><th>Message</th></tr></thead>'
+    for (const msgFile of files) {
+        //check if tbz2 file or not, if not use txt
+        let ext = getExt(msgFile.name);
+        ext = ext.toString().toLowerCase();
+
+        let newData = ''
+        if (ext != 'tbz2') {
+            console.log('message from the Forum detected')
+            newData = await getText(msgFile.path)
+            let lines = newData.split('\n')
+            for (const line of lines) {
+                msgList += '<tr class="has-background-primary"><td></td><td>' + line + '</td></tr>'
+            }
+        } else {
+            newData = await getTbz2(msgFile.path)
+
+            let dateAndTime = msgFile.name.substring(0, msgFile.name.indexOf("."))
+            let date = dateAndTime.substring(0, dateAndTime.indexOf("_"))
+            let time = dateAndTime.substring(dateAndTime.indexOf("_")+1)
+            time = time.replace('_', ':')
+            time = time.replace('_tags', '')
+
+            let special = (dateAndTime.indexOf("_tags") == -1) ? '' : ' - special Tags'
+
+            msgList += '<tr class="has-background-black"><td></td><td>' + date + ' ' + time + special + '</td></tr>'
+            msgList += await getAprsMessageList(newData)
+        }
+
+    }
+    msgList += '</table>'
+    
+    //const msgList = await getAprsMessageList(data)
+    document.getElementById('messages').innerHTML = msgList
+    // generate smaller list of last 10 messages for Dashboard
+    document.getElementById('messages_dash').innerHTML = msgList
+
+    //refresh messages every 60s
+    setTimeout(() => { getMessages() }, 60000);
+}
 
 // get filetree json from backend 
 function getfilestree(path) {
@@ -188,7 +258,7 @@ function filestree(json) {
             a.onclick = function (event) {
                 event.preventDefault();
                 toggleModal('md_fileview');
-                viewFile(element.path, fileExt);
+                viewFile(element.path, fileExt, element.name);
             }
             info.innerText = fileExt + ' - ' + element.size + ' bytes';
         }
@@ -227,15 +297,18 @@ function updateStats(jsnStats) {
     document.getElementById('stats_pkts').innerText = jsnStats.received;
     document.getElementById('stats_bitrate').innerText = jsnStats.bitrate;
 
-    const progress = jsnStats.packet / jsnStats.packets * 100;
-    document.getElementById('stats_progress').innerText = Math.round(progress*100)/100 + '%';
+    let progress = jsnStats.packet / jsnStats.packets * 100;
+    if (!isFinite(progress)) {
+        progress = 0
+    }
+    document.getElementById('stats_progress').innerText = Math.round(progress*100)/100 + ' %';
+    document.getElementById('stats_progressbar').value = Math.round(progress*100)/100;
     document.getElementById('stats_file').innerText = jsnStats.filename;
 
     document.getElementById('stats_lnben').innerText = (jsnStats.ldo&0x20)>0?'YES':'NO';
     document.getElementById('stats_lnbir').innerText = (jsnStats.ldo&0x01)>0?'YES':'NO';
     document.getElementById('stats_lnbcon').innerText = (jsnStats.ldo&0x02)>0?'YES':'NO';
-    document.getElementById('stats_lnbv').innerText = jsnStats.volt;
-    document.getElementById('stats_offset').innerText = jsnStats.offset;    
+    document.getElementById('stats_lnbv').innerText = jsnStats.volt;      
     
     document.getElementById('stats_time').innerText = jsnStats.tstamp;    
 }
@@ -257,6 +330,16 @@ function setReceiverAddTick() {
 function setReceiverRemoveTick() {
     var freq = parseInt(document.getElementById('rcv_freq').value);
     document.getElementById('rcv_freq').value = freq - 10000;
+}
+
+function receiverAddAndSaveTick() {
+    setReceiverAddTick()
+    saveReceiver()
+}
+
+function receiverRemoveAndSaveTick() {
+    setReceiverRemoveTick()
+    saveReceiver()
 }
 
 // save Reeiver Settings
@@ -283,6 +366,10 @@ function saveReceiver() {
     http.onreadystatechange = function() {//Call a function when the state changes.
         if(http.readyState == 4 && http.status == 200) {
             console.log('settings set', http.responseText);
+            // update other UI elements that use Receiver data
+            document.getElementById('stats_freq').innerText = freq/1000000 + ' mhz';
+            document.getElementById('stats_lora').innerText = 'BW ' + getHumanReadableBW(parseInt(bw)) + ' - SF ' + sf + ' - CR ' + getHumanReadableCR(parseInt(cr));
+            
             document.getElementById('tag_saveRcv').classList.remove('is-hidden');
             setTimeout(function(){ document.getElementById('tag_saveRcv').classList.add('is-hidden'); }, 5000);
         }
@@ -403,6 +490,24 @@ function clearLogs() {
     }
 }
 
+//Remove Temp Files
+function clearTmp() {
+    if(confirm("Do you want to Clear all Tmp files?")){
+        document.getElementById('btn_cleartmp').classList.add('is-loading');
+        const http = new XMLHttpRequest();
+        var url = '/cleartmp';
+        http.open("POST", url, true);
+        
+        http.onreadystatechange = function() {//Call a function when the state changes.
+            if(http.readyState == 4 && http.status == 200) {
+                console.log('tmp files cleared', http.responseText);
+            }
+            document.getElementById('btn_cleartmp').classList.remove('is-loading');
+        }
+        http.send();
+    }
+}
+
 //Remove Logfiles
 function reboot() {
     if(confirm("Do you want to Reboot the Device?")){
@@ -455,7 +560,7 @@ async function getText(filepath) {
     return fetch(filepath)
         .then(response => response.text())
         .then(data => {
-            return data; 
+            return data;
         });
 }
 
@@ -469,11 +574,27 @@ async function getImage(filepath) {
     return '<img src="'+filepath+'" style="width: 100%">'
 }
 
+// get aprs meassges as list from parsing File/String
+async function getAprsMessageList(aprsData) {
+    let msgList = ''
+    let lines = await aprsData.split('\n')
+    lines.pop() //remove last line because it is always nul
+    lines.forEach(line => {
+        let parts = line.split(',')
+        let call = '' + parts[0].match('[A-Z0-9]+-[0-9]+>')
+        let match = '' + line.match(/q[A-Z0-9]{2},.*/)
+        let msg = match.replace(/q[A-Z0-9]{2},/, '')
+        msgList += '<tr><td>' + call.slice(0,-1) + '</td><td>' + msg + '</td></tr>' 
+    });
+    return msgList
+}
+
 // get File and open it in the Viewer
 async function viewFile(filepath, fileExt) {
     document.getElementById('md_fileview_status').classList.add('loader');
     let result = 'File not Supported / Error while reading';
 
+    let dataElement = document.getElementById('data_inline');
     let iframeElement = document.getElementById('data');
     iframeElement.src = "about:blank";
     fileExt = fileExt.toString().toLowerCase();
@@ -483,7 +604,6 @@ async function viewFile(filepath, fileExt) {
         result = await getTbz2(filepath);
     }
     if (fileExt == 'txt' || fileExt == 'json' || fileExt == 'html') {
-        console.log('Text File');
         result = await getText(filepath);
     }
     if (fileExt == 'mp3') {
@@ -495,10 +615,27 @@ async function viewFile(filepath, fileExt) {
         result = await getImage(filepath);
     }
 
-    // Set the iframe's new HTML
-    iframeElement.contentWindow.document.open();
-    iframeElement.contentWindow.document.write(result);
-    iframeElement.contentWindow.document.close();
+    //display data in a special way by type
+    if(filepath.includes('/log/')){
+        dataElement.hidden = false
+        iframeElement.hidden = true
+        result = '<pre>' + result + '</pre>';
+        dataElement.innerHTML = result
+    } else if(filepath.includes('/messages/') && fileExt == 'tbz2'){
+        dataElement.hidden = false
+        iframeElement.hidden = true
+        result = await getAprsMessageList(result);
+        dataElement.innerHTML = result
+    } else {
+        dataElement.hidden = true
+        dataElement.innerHTML = ''
+        // Set the iframe's new HTML
+        iframeElement.contentWindow.document.open();
+        iframeElement.contentWindow.document.write(result);
+        iframeElement.contentWindow.document.close();
+        iframeElement.hidden = false
+    }
+   
     document.getElementById('md_fileview_status').classList.remove('loader');
 }
 
@@ -517,9 +654,46 @@ function toggleMidiStream(){
     }
 }
 
+function getHumanReadableBW(bw) {
+    switch (bw) {
+        case 13:
+            return '200'
+        case 14:
+            return '400'
+        case 15:
+            return '800'
+        default:
+            return bw
+    }
+}
+
+function getHumanReadableCR(cr) {
+    switch (cr) {
+        case 1:
+            return '4/5'
+        case 2:
+            return '4/6'
+        case 3:
+            return '4/7'
+        case 4:
+            return '4/8'
+        default:
+            return cr
+    }
+}
+
+// Requests current stats from Backend
+function getStats() {
+    let statsData = JSON.parse(synchronousRequest('/stats'))
+    updateStats(statsData)
+    setTimeout(function(){ getStats() }, 1000);
+}
+
 // ON Window loaded
 document.addEventListener('DOMContentLoaded', event => {
-    getfilestree('/files');
+    getfilestree('/files')
+    getMessages()
+    getStats()
 
     document.getElementById('info_ip').innerText = myip;
     try {        
@@ -531,6 +705,9 @@ document.addEventListener('DOMContentLoaded', event => {
         //document.getElementById('lo_en').checked = init_lo;
         document.getElementById('diseq').checked = init_diseq;
         //document.getElementById('rcv_loid').value = init_loid;
+
+        document.getElementById('stats_freq').innerText = init_freq/1000000 + ' mhz';
+        document.getElementById('stats_lora').innerText = 'BW ' + getHumanReadableBW(init_bw) + ' - SF ' + init_sf + ' - CR ' + getHumanReadableCR(init_cr);
     } catch (error) {}
 
     document.getElementById('volume').addEventListener("input", function (e) {
@@ -541,12 +718,6 @@ document.addEventListener('DOMContentLoaded', event => {
     });
 
     wsHandle = new WebSocket('ws://' + window.location.host + '/ws');
-    wsHandle.onopen = function (event) {
-        document.getElementById('con_status').classList = 'tag is-light is-success';
-        document.getElementById('con_status').innerText = 'Connected';
-        wsHandle.send("get stats");
-    };
-
     wsHandle.onmessage = function (event) {
         //console.log(event.data);
         let data = JSON.parse(event.data);
@@ -564,15 +735,7 @@ document.addEventListener('DOMContentLoaded', event => {
             } else {
                 console.log("got something else");
             }
-        } else {
-            updateStats(data);
-            setTimeout(function(){ wsHandle.send("get stats"); }, 1000);
         }
-    };
-
-    wsHandle.onerror = function (event) { 
-        document.getElementById('con_status').classList = 'tag is-light is-danger';
-        document.getElementById('con_status').innerText = 'Connection Error';
     };
 });
 
