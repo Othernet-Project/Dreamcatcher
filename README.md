@@ -28,7 +28,7 @@ https://docs.espressif.com/projects/esp-idf/en/v4.4.5/esp32/get-started/index.ht
 ```
 mkdir -p ~/esp
 cd ~/esp
-git clone -b v5.1 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v4.4.5 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh
 ```
