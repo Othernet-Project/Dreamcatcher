@@ -1,5 +1,7 @@
 #include "SPI.h"
 #include "lr11xx.h"
+#include "ft8/ft8.h"
+#include "ft8/ft8_constants.h"
 #include "customize.h"
 #include "settings.h"
 #include "esp_task_wdt.h"
@@ -212,6 +214,61 @@ IRAM_ATTR void busyIRQ()
   //Serial.println(digitalRead(RFBUSY));
 }
 
+// transmits FT9 over the LR11xx using CW mode and the FT8_lib
+void txFT8(const char* message, bool isFreeMessage = false, bool useOddSlot = false)
+{
+  uint16_t tone_spacing = 6;       // Tone Spacing is 6.25 Hz, but SX Chips only support full Hz, so we use 6
+  uint16_t tone_delay = 159;       // Tone Delay in ms
+ 
+  uint8_t* tones = getFT8SymbolsFromText(message, isFreeMessage);
+
+  // get time to find next FT8 window to TX
+  time_t now;
+  struct tm timeinfo;
+  time(&now);
+  localtime_r(&now, &timeinfo);
+  Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+
+  bool waitingForTimeSlot = true;
+
+  //while (timeinfo.tm_sec % 30 != 00)
+  while (waitingForTimeSlot)
+  {
+    Serial.print("waiting for TX window, secs: ");
+    Serial.println(timeinfo.tm_sec);
+    if (!useOddSlot)
+    {
+      if (timeinfo.tm_sec % 30 == 0) {
+        waitingForTimeSlot = false;
+      }
+    } else {
+      if (timeinfo.tm_sec == 15 || timeinfo.tm_sec == 45) {
+        waitingForTimeSlot = false;
+      }
+    }
+    
+    delay(500);
+    time(&now);
+    localtime_r(&now, &timeinfo);
+  }
+
+  Serial.printf("TX Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+  
+  lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
+  lr11xx_radio_set_tx_cw(&lrRadio);               // Enable TX in CW mode
+
+  uint8_t i;
+  for (i = 0; i < FT8_NN; i++)
+  {
+    lr11xx_radio_set_rf_freq(&lrRadio, (Frequency) + (tones[i] * tone_spacing));
+    delay(tone_delay);   //just use delay, not perfect timing but good enough for now
+  }
+
+  // Set Radio back to normal Frequency and stop TX by setting it to RX
+  lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
+  lr11xx_radio_set_rx(&lrRadio, 0);
+}
+
 /**
  * Init lr11xx with default params, order is important:
  * 1) SetPacketType to LORA
@@ -363,6 +420,8 @@ void initLR11xx()
 
   blink_rx = xSemaphoreCreateBinary();
   xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+
+  txFT8("HELLO THEREM8", true);
 }
 
 /**
