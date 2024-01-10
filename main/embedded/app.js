@@ -8,7 +8,9 @@ let plays = false;
 let midiTimeout;
 let lastMidiBuf;
 
-let synth;
+let synth
+let txStatus = 0
+let cwEnabled = false
 
 function createSynth() {
     synth = new Tone.PolySynth(Tone.Synth, {
@@ -101,6 +103,11 @@ function toggleModal(id) {
 }
 
 function toggleTab(me, tabClass, contentClass, idToOpen) {
+    document.querySelectorAll('.navbar-item').forEach(function(el) {
+        el.classList.remove('is-active')
+    });
+    document.getElementById(me).classList.add("is-active");
+
     document.querySelectorAll(contentClass).forEach(function(el) {
         el.style.display = 'none';
     });
@@ -297,6 +304,14 @@ function updateStats(jsnStats) {
     document.getElementById('stats_pkts').innerText = jsnStats.received;
     document.getElementById('stats_bitrate').innerText = jsnStats.bitrate;
 
+    document.getElementById('rcv_snr').innerText = jsnStats.snr;
+    document.getElementById('rcv_rssi').innerText = jsnStats.rssi;
+
+    document.getElementById('rcv_crc').innerText = jsnStats.crc;
+    document.getElementById('rcv_header').innerText = jsnStats.header;
+    document.getElementById('rcv_pkts').innerText = jsnStats.received;
+    document.getElementById('rcv_bitrate').innerText = jsnStats.bitrate;
+
     let progress = jsnStats.packet / jsnStats.packets * 100;
     if (!isFinite(progress)) {
         progress = 0
@@ -311,6 +326,29 @@ function updateStats(jsnStats) {
     document.getElementById('stats_lnbv').innerText = jsnStats.volt;      
     
     document.getElementById('stats_time').innerText = jsnStats.tstamp;    
+    document.getElementById('tx_dtime').innerText = jsnStats.tstamp; 
+    
+    // set tx status on UI
+    console.log("TX Status: " + jsnStats.txstatus)
+    txStatus = jsnStats.txstatus
+    switch (parseInt(jsnStats.txstatus)) {
+        case 0:
+            document.getElementById('tag_TxStatus').innerText = "TX Ready"
+            document.getElementById('btn_txft8').classList.remove('is-loading')
+            document.getElementById('btn_txft8').disabled = false 
+            break;
+        case 1:
+            document.getElementById('tag_TxStatus').innerText = "TX Queued"
+            document.getElementById('btn_txft8').classList.add('is-loading')
+            document.getElementById('btn_txft8').disabled = true 
+            break;
+        case 2:
+            document.getElementById('tag_TxStatus').innerText = "TX Active"
+            document.getElementById('btn_txft8').classList.add('is-loading')
+            document.getElementById('btn_txft8').disabled = true 
+            break;
+    }
+
 }
 
 // Receiver Preset/Increment Freq functions
@@ -330,6 +368,16 @@ function setReceiverAddTick() {
 function setReceiverRemoveTick() {
     var freq = parseInt(document.getElementById('rcv_freq').value);
     document.getElementById('rcv_freq').value = freq - 10000;
+}
+
+function setTxAddTick() {
+    var freq = parseInt(document.getElementById('tx_freq').value);
+    document.getElementById('tx_freq').value = freq + 10000;
+}
+
+function setTxRemoveTick() {
+    var freq = parseInt(document.getElementById('tx_freq').value);
+    document.getElementById('tx_freq').value = freq - 10000;
 }
 
 function receiverAddAndSaveTick() {
@@ -375,6 +423,120 @@ function saveReceiver() {
         }
     }
     http.send(params);
+}
+
+// save TX Reeiver Frequency
+function saveTxFreq() {
+    let freq = document.getElementById('tx_freq').value;
+
+    const http = new XMLHttpRequest();
+    var params = 'freq=' + freq
+    console.log(params);
+    var url = '/txfreq';
+    http.open("POST", url, true);
+    // Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            console.log('TX Frequency set ', http.responseText);
+            // update other UI elements that use Receiver data
+            document.getElementById('tag_saveTxFreq').classList.remove('is-hidden');
+            setTimeout(function(){ document.getElementById('tag_saveTxFreq').classList.add('is-hidden'); }, 5000);
+        }
+    }
+    http.send(params);
+}
+
+// Hamradio functions
+
+// sync time with client device
+function postSyncTime() {
+    const http = new XMLHttpRequest();
+
+    const currentDate = new Date()
+    const timestamp = currentDate.getTime()
+    console.log(timestamp)
+
+    var params = 'ts=' + Math.round(timestamp/1000);
+    console.log(params);
+    var url = '/synctime';
+    http.open("POST", url, true);
+    // Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            console.log('time sync done', http.responseText);
+            return true;
+        }
+    }
+    http.send(params);
+    return true;
+}
+
+// tx FT8 via Dreamcatcher with settings from UI
+function postTxFT8() {
+    const http = new XMLHttpRequest();
+
+    console.log("FT8 TX initiated...")
+    document.getElementById('btn_txft8').classList.add('is-loading');
+
+    let msg = document.getElementById('ft8_msg').value;
+    let odd = document.getElementById('ft8_odd').checked;
+    let text = document.getElementById('ft8_text').checked;
+
+    var params = 'msg=' + msg;
+    params += '&odd=' + odd;
+    params += '&txt=' + text;
+    console.log(params);
+
+    var url = '/ft8tx';
+    http.open("POST", url, true);
+    // Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            console.log('ft8tx done', http.responseText);
+            return true;
+        }
+    }
+    http.send(params);
+
+    document.getElementById('btn_txft8').disabled = true;
+    
+    return true;
+}
+
+// toggle CW or enable continues CW tone
+function toggleCW(toneType = 2) {
+    const http = new XMLHttpRequest();
+
+    // Tone types: 0 = DIT 1 = DAH 2 = continous
+    if (toneType == 2) {
+        cwEnabled = !cwEnabled
+    } else {
+        cwEnabled = true
+    }
+
+    var params = 'on=' + cwEnabled
+    params += '&type=' + toneType
+
+    var url = '/cwtx';
+    http.open("POST", url, true);
+    // Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            console.log('cwtx done', http.responseText);
+            return true;
+        }
+    }
+    http.send(params);
+
+    return true;
 }
 
 // send WIFI Creds to backend
@@ -686,8 +848,27 @@ function getHumanReadableCR(cr) {
 function getStats() {
     let statsData = JSON.parse(synchronousRequest('/stats'))
     updateStats(statsData)
-    setTimeout(function(){ getStats() }, 1000);
+    setTimeout(function(){ getStats() }, 1000)
 }
+
+// events of keypresses on keyboard
+document.addEventListener("keyup", function(event) {
+
+    let cwKeysEnabled = document.getElementById('cw_keys').checked;
+    
+    if (cwKeysEnabled) {    
+        //console.log(event.key)
+        if (event.key == 'c' || event.key == 'C') {
+        console.log("c")
+        toggleCW(0)
+        }
+        
+        if (event.key == 'w' || event.key == 'W') {
+        console.log("w")
+        toggleCW(1)
+        }
+    }
+  });
 
 // ON Window loaded
 document.addEventListener('DOMContentLoaded', event => {
@@ -708,6 +889,8 @@ document.addEventListener('DOMContentLoaded', event => {
 
         document.getElementById('stats_freq').innerText = init_freq/1000000 + ' mhz';
         document.getElementById('stats_lora').innerText = 'BW ' + getHumanReadableBW(init_bw) + ' - SF ' + init_sf + ' - CR ' + getHumanReadableCR(init_cr);
+
+        document.getElementById('tx_freq').value = init_txfreq;
     } catch (error) {}
 
     document.getElementById('volume').addEventListener("input", function (e) {

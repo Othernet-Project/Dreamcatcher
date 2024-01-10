@@ -11,8 +11,10 @@ https://github.com/kgoba/ft8_lib/tree/master
 
 */
 
-extern "C" uint8_t* getFT8SymbolsFromText(const char* message, bool isFreeMessage = false)
+extern "C" uint8_t* getFT8SymbolsFromText(const char *message, bool isFreeMessage = false)
 {
+    static uint8_t tones[FT8_NN]; // Array of 79 tones (symbols) for FT8
+
     ftx_message_t msg;
     ftx_message_rc_t rc;
     if (isFreeMessage)
@@ -24,7 +26,7 @@ extern "C" uint8_t* getFT8SymbolsFromText(const char* message, bool isFreeMessag
     
     if (rc != FTX_MESSAGE_RC_OK)
     {
-        Serial.println('Cannot parse message!');
+        Serial.println("Cannot parse message!");
         Serial.printf("RC = %d\n", (int)rc);
     }
 
@@ -35,7 +37,6 @@ extern "C" uint8_t* getFT8SymbolsFromText(const char* message, bool isFreeMessag
     }
     Serial.printf("\n");
 
-    static uint8_t tones[FT8_NN]; // Array of 79 tones (symbols) for FT8
     ft8_encode(msg.payload, tones);
 
     Serial.printf("FSK tones: ");

@@ -6,7 +6,6 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
@@ -40,6 +39,9 @@
 extern void storeWifiCredsAP(char* ssid, char* pass);
 extern void storeWifiCredsSTA(char* ssid, char* pass, bool tlm);
 extern void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
+extern void storeLoraSettings();
+extern void txFT8(const char *message, bool isFreeMessage, bool useOddSlot);
+extern void queueTX(const char *message, bool isFreeMessage, bool useOddSlot);
 extern void getMidi(char* _txtarray);
 
 
@@ -332,6 +334,7 @@ static const char ws_json[] = \
 \"max\":\"%llu\",\
 \"filepath\":\"%s\",\
 \"filename\":\"%s\",\
+\"txstatus\":\"%d\",\
 \"tstamp\":\"%s\"}";
 
 /*
@@ -348,6 +351,7 @@ static void ws_async_send(void *arg)
     extern uint8_t CPU_USAGE;
     extern char filename[260];
     extern uint16_t offset;
+    extern int tx_status;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
     uint64_t used_space = 0;
@@ -365,7 +369,7 @@ static void ws_async_send(void *arg)
     time(&now);
     localtime_r(&now, &timeinfo);
     char *tstamp = (char*) heap_caps_malloc(64, MALLOC_CAP_SPIRAM);
-    sprintf(tstamp,"%02d.%02d.%d - %02d:%02d:%02d", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    sprintf(tstamp,"%d.%02d.%02d - %02d:%02d:%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon+1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     struct async_resp_arg *resp_arg = arg;
     httpd_handle_t hd = resp_arg->hd;
@@ -393,6 +397,7 @@ static void ws_async_send(void *arg)
         max_space,
         "path",
         filename,
+        tx_status,
         tstamp
     );
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
@@ -424,6 +429,7 @@ static esp_err_t stats_handler(httpd_req_t *req)
     extern uint8_t CPU_USAGE;
     extern char filename[260];
     extern uint16_t offset;
+    extern int tx_status;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
     uint64_t used_space = 0;
@@ -441,7 +447,7 @@ static esp_err_t stats_handler(httpd_req_t *req)
     time(&now);
     localtime_r(&now, &timeinfo);
     char *tstamp = (char*) heap_caps_malloc(64, MALLOC_CAP_SPIRAM);
-    sprintf(tstamp,"%02d.%02d.%d - %02d:%02d:%02d", timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    sprintf(tstamp,"%d.%02d.%02d - %02d:%02d:%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon+1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     sprintf(data, ws_json,
         heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
@@ -465,6 +471,7 @@ static esp_err_t stats_handler(httpd_req_t *req)
         max_space,
         "path",
         filename,
+        tx_status,
         tstamp
     );
     
@@ -553,6 +560,7 @@ static esp_err_t appjs_handler(httpd_req_t *req)
 static esp_err_t myipjs_handler(httpd_req_t *req)
 {
     extern uint32_t Frequency;
+    extern uint32_t txFrequency;
     extern uint8_t Bandwidth;
     extern uint8_t SpreadingFactor;
     extern uint8_t CodeRate;
@@ -561,10 +569,10 @@ static esp_err_t myipjs_handler(httpd_req_t *req)
     extern bool bEnableLNB;
     extern bool bEnableLO;
     extern bool bEnableDiseq;
-    char ipjs[200] = {0};
-    sprintf(ipjs, "myip = '%s';\nlet init_freq = %u;\n let init_bw = %d;\nlet init_sf = %d;\nlet init_cr = %d; \
+    char ipjs[256] = {0};
+    sprintf(ipjs, "myip = '%s';\nlet init_freq = %u;\nlet init_txfreq = %u;\nlet init_bw = %d;\nlet init_sf = %d;\nlet init_cr = %d; \
                 \nlet init_lnb = %d;\nlet init_lo = %d;\nlet init_diseq = %d;\nlet init_loid = %d;", 
-                myIP, Frequency, Bandwidth, SpreadingFactor, CodeRate, bEnableLNB, bEnableLO, bEnableDiseq, uLOid);
+                myIP, Frequency, txFrequency, Bandwidth, SpreadingFactor, CodeRate, bEnableLNB, bEnableLO, bEnableDiseq, uLOid);
     set_content_type_from_file(req, "app.js");
     httpd_resp_send_chunk(req, ipjs, strlen(ipjs));
 
@@ -658,6 +666,147 @@ static esp_err_t reboot_handler(httpd_req_t *req)
 {
     vTaskDelay(1000);
     rebootDevice();
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * Set time from client device
+ */
+static esp_err_t synctime_handler(httpd_req_t *req)
+{
+    char content[200] = {0};
+
+    /* Truncate if content length larger than the buffer */
+    size_t len = MIN(req->content_len, sizeof(content));
+
+    int ret = httpd_req_recv(req, content, len);
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Tstamp:  %s, ", content);
+
+    char* ts = strstr(content, "ts=");
+    int32_t tstamp = atoi(ts + 3);
+    ESP_LOGI(TAG, "Tstamp:  %d, ", tstamp);
+
+    setUnixtime(tstamp);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * FT8 TX handler via WEB UI
+ */
+static esp_err_t ft8tx_handler(httpd_req_t *req)
+{
+    char content[200] = {0};
+
+    /* Truncate if content length larger than the buffer */
+    size_t len = MIN(req->content_len, sizeof(content));
+
+    int ret = httpd_req_recv(req, content, len);
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
+        return ESP_FAIL;
+    }
+
+    char* msg = strstr(content, "msg=");
+    char* odd = strstr(content, "&odd=");
+    char* txt = strstr(content, "&txt=");
+    char _msg[64] = {0};
+    int msg_len = odd - msg - 4;
+    bool txodd = strncmp(odd + 5, "true", 4) == 0;
+    bool txtxt = strncmp(txt + 5, "true", 4) == 0;
+    strncpy(_msg, msg + 4, msg_len);
+
+    // set TX Data
+    ft8Data.message = _msg;
+    ft8Data.isFreeMessage = txtxt;
+    ft8Data.useOddSlot = txodd;
+    ft8Data.readyToTx = true;
+
+    //queueTX(_msg, txtxt, txodd);
+    queueTX(NULL, NULL, NULL);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * CW TX handler via WEB UI
+ */
+static esp_err_t cwtx_handler(httpd_req_t *req)
+{
+    char content[200] = {0};
+
+    /* Truncate if content length larger than the buffer */
+    size_t len = MIN(req->content_len, sizeof(content));
+
+    int ret = httpd_req_recv(req, content, len);
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
+        return ESP_FAIL;
+    }
+
+    char* on = strstr(content, "on=");
+    char* type = strstr(content, "type=");
+    bool txon = strncmp(on + 3, "true", 3) == 0;
+
+    int _type = atoi(type + 5);
+
+    cwData.enabled = txon;
+    cwData.type = _type;
+
+    queueTX(NULL, NULL, NULL);
+
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+/**
+ * Save TX Frequency
+ */
+static esp_err_t txfreq_handler(httpd_req_t *req)
+{
+    char content[200] = {0};
+
+    /* Truncate if content length larger than the buffer */
+    size_t len = MIN(req->content_len, sizeof(content));
+
+    int ret = httpd_req_recv(req, content, len);
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
+        return ESP_FAIL;
+    }
+
+    char* freq = strstr(content, "freq=");
+    uint32_t _freq = strtoul( freq + 5, &freq, 0);
+
+    extern uint32_t txFrequency;
+    txFrequency = _freq;
+    storeLoraSettings();
+    //queueTX(NULL, NULL, NULL);
+
     /* Respond with an empty chunk to signal HTTP response completion */
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
@@ -913,7 +1062,7 @@ void web_server()
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_open_sockets = 7;
     config.stack_size = 10 * 1024;
-    config.max_uri_handlers = 16;
+    config.max_uri_handlers = 32;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
     if (httpd_start(&server, &config) != ESP_OK) {
@@ -990,6 +1139,38 @@ void web_server()
     };
     httpd_register_uri_handler(server, &wifi);
 
+    httpd_uri_t synctime = {
+        .uri       = "/synctime",
+        .method    = HTTP_POST,
+        .handler   = synctime_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &synctime);
+
+    httpd_uri_t ft8tx = {
+        .uri       = "/ft8tx",
+        .method    = HTTP_POST,
+        .handler   = ft8tx_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &ft8tx);
+
+    httpd_uri_t cwtx = {
+        .uri       = "/cwtx",
+        .method    = HTTP_POST,
+        .handler   = cwtx_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &cwtx);
+
+    httpd_uri_t txfreq = {
+        .uri       = "/txfreq",
+        .method    = HTTP_POST,
+        .handler   = txfreq_handler,
+        .user_ctx  = server_data    // Pass server data as context
+    };
+    httpd_register_uri_handler(server, &txfreq);
+
     httpd_uri_t stats = {
         .uri       = "/stats",
         .method    = HTTP_GET,
@@ -1030,14 +1211,14 @@ void web_server()
     };
     httpd_register_uri_handler(server, &reboot);
     
-        httpd_uri_t freset = {
+    httpd_uri_t freset = {
         .uri       = "/freset",
         .method    = HTTP_POST,
         .handler   = factory_reset_handler,
         .user_ctx  = server_data    // Pass server data as context
     };
     httpd_register_uri_handler(server, &freset);
-
+    
     httpd_uri_t settings = {
         .uri       = "/settings",
         .method    = HTTP_POST,

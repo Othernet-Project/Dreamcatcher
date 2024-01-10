@@ -132,6 +132,18 @@ void onWiFiEvent(WiFiEvent_t event)
     logToFile(newLogEntry);
 }
 
+void setUnixtime(int32_t unixtime) {
+    Serial.println("Syncing time with Client Device");
+    timeval epoch = {unixtime, 0};
+    settimeofday((const timeval*)&epoch, 0);
+    
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+}
+
 void wifi_init_sta(char* ssid, char* pass)
 {
     char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
@@ -188,10 +200,6 @@ void wifi_init_sta(char* ssid, char* pass)
         time(&now);
         localtime_r(&now, &timeinfo);
         Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
-        
-        //btain_time();
-        // update 'now' variable with current time
-        //time(&now);
     }
 
     extern char myIP[20];
