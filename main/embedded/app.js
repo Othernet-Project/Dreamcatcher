@@ -140,23 +140,37 @@ function synchronousRequest(url) {
     }
  }
 
+// sort an Array (arr) of Objects by a property (key)
+function sortArrayOfObjects(arr, key, reverse = false) {
+    arr.sort((a, b) => {
+        if (a[key] < b[key]) {
+        return -1;
+        }
+        if (a[key] > b[key]) {
+        return 1;
+        }
+        return 0;
+    });
+    if (reverse) arr.reverse()
+    return arr;
+}
+
 // get newest messages from backend
 async function getMessages() {
-    console.log('getMessages started....')
-
     let folders = JSON.parse(synchronousRequest('/files/messages/'))
-    folders.reverse()
+    folders = sortArrayOfObjects(folders, 'name', true)
 
     let files = []
     for (const folder of folders) {
-        let newFiles = JSON.parse(synchronousRequest(folder.path+'/'))
-        files = files.concat(newFiles)
-        if (files.length >= 4) {
-            files.reverse()
-            files = files.slice(0, 4)
-            break
+        if(folder.name != "Up" && folder.dir == 1){ 
+            let newFiles = JSON.parse(synchronousRequest(folder.path+'/'))
+            files = files.concat(newFiles)
+            if (files.length >= 4) break
         }
     }
+
+    files = sortArrayOfObjects(files, 'name', true)
+    files = files.slice(1, 5)
     
     let msgList = '<table class="table is-fullwidth"><thead><tr><th style="width:7rem">Call</th><th>Message</th></tr></thead>'
     for (const msgFile of files) {
@@ -166,7 +180,6 @@ async function getMessages() {
 
         let newData = ''
         if (ext != 'tbz2') {
-            console.log('message from the Forum detected')
             newData = await getText(msgFile.path)
             let lines = newData.split('\n')
             for (const line of lines) {
