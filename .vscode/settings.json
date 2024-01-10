@@ -64,6 +64,11 @@
         "typeinfo": "cpp",
         "hash_map": "cpp",
         "hash_set": "cpp",
-        "esp_wifi.h": "c"
+        "esp_wifi.h": "c",
+        "__config": "cpp",
+        "__locale": "cpp",
+        "locale": "cpp",
+        "time.h": "c",
+        "stdio.h": "c"
     }
 }

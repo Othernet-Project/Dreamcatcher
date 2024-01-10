@@ -1,5 +1,7 @@
 #include "SPI.h"
 #include "lr11xx.h"
+#include "ft8/ft8.h"
+#include "ft8/ft8_constants.h"
 #include "customize.h"
 #include "settings.h"
 #include "esp_task_wdt.h"
@@ -7,11 +9,13 @@
 #include "libb64/cencode.h"
 #include "carousel.h"
 #include "driver/gpio.h"
+#include "wifi.h"
 
 carousel data_carousel;				// File downloader for this stream
 portMUX_TYPE sxMux;
 extern bool sdCardPresent;
 unsigned int filepacket, filepackets;
+int tx_status = 0;            // TX Status: 0 = Ready, 1 = TX Queued, 2 = TX active
 char filename[260] = "";
 AsyncUDP udp;
 int32_t offset;
@@ -30,6 +34,7 @@ lr11xx_system_version_t version;
 SPIClass* spi1110;
 
 uint32_t Frequency;
+uint32_t txFrequency;
 int32_t _Offset = 0;                        //offset frequency for calibration purposes  
 uint8_t Bandwidth;          //LoRa bandwidth
 uint8_t SpreadingFactor;        //LoRa spreading factor
@@ -68,6 +73,10 @@ uint8_t firstnote = 0;
 char* txtarray;
 
 static SemaphoreHandle_t blink_rx;
+static SemaphoreHandle_t tx_ft8;
+
+struct ft8_data ft8Data;
+struct cw_data cwData;
 
 uint32_t midiNoteToFreq(uint8_t note){
     return pow(2, ((note - 69) / 12)) * 440;
@@ -144,6 +153,75 @@ void blinky(void *pvParameter)
     }
 }
 
+// transmits a CW tone
+void txCW()
+{
+  Serial.println("txCW function");
+  Serial.println(txFrequency);
+  if (cwData.enabled && cwData.type == 2)
+  {
+    Serial.println("txCW function: ON");
+    lr11xx_radio_set_rf_freq(&lrRadio, txFrequency);
+    lr11xx_radio_set_tx_cw(&lrRadio);               // Enable TX in CW mode
+  } else if (!cwData.enabled && cwData.type == 2) {
+    Serial.println("txCW function: OFF");
+    lr11xx_radio_set_rx(&lrRadio, 0);
+    tx_status = 0;
+  }
+
+  // do a dit
+  if (cwData.enabled && cwData.type == 0)
+  {
+    Serial.println("txCW function: DIT");
+    lr11xx_radio_set_rf_freq(&lrRadio, txFrequency);
+    lr11xx_radio_set_tx_cw(&lrRadio);
+    vTaskDelay(100 / portTICK_RATE_MS); // sleep 100ms
+    lr11xx_radio_set_rx(&lrRadio, 0);
+    tx_status = 0;
+  }
+
+  // do a dah
+  if (cwData.enabled && cwData.type == 1)
+  {
+    Serial.println("txCW function: DAH");
+    lr11xx_radio_set_rf_freq(&lrRadio, txFrequency);
+    lr11xx_radio_set_tx_cw(&lrRadio);
+    vTaskDelay(300 / portTICK_RATE_MS); // sleep 100ms
+    lr11xx_radio_set_rx(&lrRadio, 0);
+    tx_status = 0;
+  }
+  
+}
+
+void txData(void *pvParameter)
+{
+  while(1)
+    {
+        if( xSemaphoreTake( tx_ft8, portMAX_DELAY ) == pdTRUE )
+        {
+          // if FT8 data is avaliable for TX, start it
+          if (ft8Data.readyToTx && tx_status == 0)
+          {
+            Serial.println("FT8 Data ready to TX");
+            tx_status = 1;
+            txFT8(ft8Data.message, ft8Data.isFreeMessage, ft8Data.useOddSlot);
+            ft8Data.readyToTx = false;
+          }
+          // CW should be enabled
+          Serial.println(tx_status);
+          Serial.println(cwData.enabled);
+          if ((cwData.enabled && tx_status == 0) || (cwData.enabled == false && tx_status == 2))
+          //if(tx_status == 0)
+          {
+            Serial.println("CW TX Toggle");
+            tx_status = 2;
+            txCW();
+          }
+              
+        }
+    }
+}
+
 /**
  * Helper function to feed website with stats
  */
@@ -210,6 +288,93 @@ IRAM_ATTR void busyIRQ()
 {
   //Serial.print("irq on busy, level: ");
   //Serial.println(digitalRead(RFBUSY));
+}
+
+// set Frequency including RF Switches
+void setFrequency(uint32_t freq)
+{
+  Serial.println("Setting Freq");
+  lr11xx_radio_set_rf_freq(&lrRadio, freq);
+
+  // set RF Switches to subGHZ SMA if frequency is under 1.9ghz
+  if (freq < 1900000000)
+  {
+    Serial.println("Setting Freq: RF Switch to sub-GHz Port");
+    gpio_set_level((gpio_num_t)RF_SW_SUBG1, 0);
+    gpio_set_level((gpio_num_t)RF_SW_SUBG2, 1);
+  } else {
+    Serial.println("Setting Freq: RF Switch to 2.4GHz Port");
+    gpio_set_level((gpio_num_t)RF_SW_SUBG1, 1);
+    gpio_set_level((gpio_num_t)RF_SW_SUBG2, 0);
+  }
+  
+}
+
+//async trigger tx to not block webserver TODO: make it universal useable with different TX Protocls
+extern "C" void queueTX(const char *message, bool isFreeMessage = false, bool useOddSlot = false)
+{
+  Serial.println("queueTX started");
+  xSemaphoreGive(tx_ft8);
+}
+ 
+
+
+// transmits FT8 over the LR11xx using CW mode and the FT8_lib
+extern "C" void txFT8(const char *message, bool isFreeMessage = false, bool useOddSlot = false)
+{
+  uint16_t tone_spacing = 6;       // Tone Spacing is 6.25 Hz, but SX Chips only support full Hz, so we use 6
+  uint16_t tone_delay = 159;       // Tone Delay in ms
+
+  uint8_t* tones = getFT8SymbolsFromText(message, isFreeMessage);
+
+  // get time to find next FT8 window to TX
+  time_t now;
+  struct tm timeinfo;
+  time(&now);
+  localtime_r(&now, &timeinfo);
+  Serial.printf("Current Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+
+  bool waitingForTimeSlot = true;
+
+  //while (timeinfo.tm_sec % 30 != 00)
+  while (waitingForTimeSlot)
+  {
+    Serial.print("waiting for TX window, secs: ");
+    Serial.println(timeinfo.tm_sec);
+    if (!useOddSlot)
+    {
+      if (timeinfo.tm_sec % 30 == 0) {
+        waitingForTimeSlot = false;
+      }
+    } else {
+      if (timeinfo.tm_sec == 15 || timeinfo.tm_sec == 45) {
+        waitingForTimeSlot = false;
+      }
+    }
+    
+    vTaskDelay((500) / portTICK_PERIOD_MS);
+    time(&now);
+    localtime_r(&now, &timeinfo);
+  }
+
+  tx_status = 2;
+
+  Serial.printf("TX Devicetime: %02d:%02d:%02d - %02d.%02d.%d \n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mday, timeinfo.tm_mon+1, timeinfo.tm_year + 1900);
+
+  setFrequency(txFrequency);
+  lr11xx_radio_set_tx_cw(&lrRadio);               // Enable TX in CW mode
+
+  uint8_t i;
+  for (i = 0; i < FT8_NN; i++)
+  {
+    lr11xx_radio_set_rf_freq(&lrRadio, (txFrequency) + (tones[i] * tone_spacing));
+    vTaskDelay(tone_delay / portTICK_PERIOD_MS);   //just use delay, not perfect timing but good enough for now
+  }
+
+  // Set Radio back to normal Frequency and stop TX by setting it to RX
+  setFrequency(Frequency);
+  lr11xx_radio_set_rx(&lrRadio, 0);
+  tx_status = 0;
 }
 
 /**
@@ -327,8 +492,9 @@ void initLR11xx()
   lr11xx_radio_set_lora_pkt_params(&lrRadio, &pkt_params);
 
   // Set radio freq (3a)
-  lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
-  
+  //lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
+  setFrequency(Frequency);
+
   // SetPAConfig (4)
   const lr11xx_radio_pa_cfg_t pa_cfg = {
       .pa_sel = LR11XX_RADIO_PA_SEL_LP,                 //!< Power Amplifier selection
@@ -339,7 +505,7 @@ void initLR11xx()
   lr11xx_radio_set_pa_cfg(&lrRadio, &pa_cfg);
 
   // SetTxParams (5)
-  lr11xx_radio_set_tx_params(&lrRadio, 0, LR11XX_RADIO_RAMP_48_US);
+  lr11xx_radio_set_tx_params(&lrRadio, -10, LR11XX_RADIO_RAMP_48_US);
 
   // Set dio1 irq(6)
   lr11xx_system_set_dio_irq_params(&lrRadio, LR11XX_SYSTEM_IRQ_ALL_MASK | 0x14 | 0x15, 0);
@@ -363,6 +529,9 @@ void initLR11xx()
 
   blink_rx = xSemaphoreCreateBinary();
   xTaskCreate(&blinky, "blinky", 1024,NULL,5,NULL);
+
+  tx_ft8 = xSemaphoreCreateBinary();
+  xTaskCreate(&txData, "txdata", 8 * 1024,NULL,5,NULL);
 }
 
 /**
@@ -391,14 +560,10 @@ extern "C" void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_
   mod_params.bw = (lr11xx_radio_lora_bw_t)Bandwidth;
   mod_params.cr = (lr11xx_radio_lora_cr_t)CodeRate;
 
-  Serial.println("Starting Freq Change");
   unsigned long startMillis = micros();
   lr11xx_radio_set_lora_mod_params(&lrRadio, &mod_params);
-  lr11xx_radio_set_rf_freq(&lrRadio, Frequency);
+  setFrequency(Frequency);          //set Frequency with RF switches in mind
   lr11xx_radio_set_rx(&lrRadio, 0); //start Receiving
-  unsigned long timetook = micros() - startMillis;
-  Serial.print("Freq Change done: ");
-  Serial.println(timetook);
 
   storeLoraSettings();
 }

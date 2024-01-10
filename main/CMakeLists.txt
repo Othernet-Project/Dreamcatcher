@@ -19,6 +19,12 @@ set(SRCS
     src/HopeDuino_CMT211xA.cpp
     src/HopeDuino_TWI.cpp
     src/en50607protocol.cpp
+    src/ft8/ft8.cpp
+    src/ft8/ft8_message.c
+    src/ft8/ft8_text.c
+    src/ft8/ft8_encode.c
+    src/ft8/ft8_crc.c
+    src/ft8/ft8_constants.c
 )
 idf_component_register(SRCS ${SRCS} 
                         INCLUDE_DIRS "includes" "ondd" 

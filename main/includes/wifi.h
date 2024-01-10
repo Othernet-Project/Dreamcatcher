@@ -18,6 +18,22 @@ void send_telemetry(void *pvParameter);
 
 void getFreeSpace(uint64_t* used_space, uint64_t* max_space);
 
+void setUnixtime(int32_t unixtime);
+
+struct ft8_data{
+  const char *message;
+  bool isFreeMessage;
+  bool useOddSlot;
+  bool readyToTx;
+};
+extern struct ft8_data ft8Data;
+
+struct cw_data{
+  bool enabled;
+  int type;
+};
+extern struct cw_data cwData;
+
 extern SemaphoreHandle_t send_tlm;
 
 #ifdef __cplusplus

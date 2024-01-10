@@ -24,6 +24,7 @@ void loadSettings()
   prefs.begin("lora");
   // LoRa settings
   Frequency = prefs.getUInt("freq", DEFAULT_FREQUENCY);
+  txFrequency = prefs.getUInt("txfreq", DEFAULT_TXFREQUENCY);
   Bandwidth = prefs.getUChar("bw", DEFAULT_BW);
   SpreadingFactor = prefs.getUChar("sf", DEFAULT_SF);
   CodeRate = prefs.getUChar("cr", DEFAULT_CR);
@@ -71,10 +72,12 @@ extern "C" void storeWifiCredsSTA(char* ssid, char* pass, bool tlm)
   prefs.end();
 }
 
-void storeLoraSettings()
+extern "C" void storeLoraSettings()
 {
+  Serial.println("storeLoraSettings");
   prefs.begin("lora", false);
   prefs.putUInt("freq", Frequency);
+  prefs.putUInt("txfreq", txFrequency);
   prefs.putUChar("bw", Bandwidth);
   prefs.putUChar("sf", SpreadingFactor);
   prefs.putUChar("cr", CodeRate);

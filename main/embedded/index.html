@@ -26,19 +26,24 @@
         
             <div id="navbar" class="navbar-menu">
             <div class="navbar-start">
-                <a onclick="toggleTab('','','.tabs_main','main_dash')" class="navbar-item">Dashboard</a>
-                <a onclick="toggleTab('','','.tabs_main','main_files')"class="navbar-item">Files</a>
-                <a onclick="toggleTab('','','.tabs_main','main_messages')"class="navbar-item">Messages</a>
-        
+                <a id="nav_dash" onclick="toggleTab(this.id,'','.tabs_main','main_dash')" class="navbar-item is-active">Dashboard</a>
+                <a id="nav_files" onclick="toggleTab(this.id,'','.tabs_main','main_files')"class="navbar-item">Files</a>
+                <a id="nav_msg" onclick="toggleTab(this.id,'','.tabs_main','main_messages')"class="navbar-item">Messages</a>
+                <a id="nav_wifi" onclick="toggleTab(this.id,'','.tabs_main','main_wifi')"class="navbar-item">Wifi</a>
+                <a id="nav_rx" onclick="toggleTab(this.id,'','.tabs_main','main_receive')"class="navbar-item">Receive</a>
+                <a id="nav_tx" onclick="toggleTab(this.id,'','.tabs_main','main_transmit')"class="navbar-item">Transmit</a>
+                
+                <!--
                 <div class="navbar-item has-dropdown is-hoverable">
                     <p class="navbar-link">Settings</p>
                     <div class="navbar-dropdown">
                         <a onclick="toggleModal('md_wifiap')" class="navbar-item">Wifi AP</a>
                         <a onclick="toggleModal('md_wificlient')"class="navbar-item">Wifi Client</a>
                         <a onclick="toggleModal('md_receiver')"class="navbar-item">Receiver</a>
-                        <!--<a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>-->
+                        <a onclick="toggleModal('md_dcss')"class="navbar-item">DCSS</a>
                     </div>
                 </div>
+                -->
             </div>
         
             <div class="navbar-end">
@@ -56,86 +61,7 @@
         </nav>
 
         <!-- MODALS START -->
-        <div id="md_wifiap" class="modal">
-            <div class="modal-background"></div>
-            <div class="modal-content">
-                <div class="box">
-                    <h3 class="subtitle">Wifi Access Point<span id="tag_saveAp" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
-                    <div class="field">
-                        <label class="label">SSID / Name</label>
-                        <div class="control">
-                            <input id="ap_ssid" class="input" type="text" placeholder="Othernet DC4">
-                        </div>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="label">Password</label>
-                        <div class="control">
-                            <input id="ap_pwd" class="input" type="password" placeholder="*********">
-                        </div>
-                    </div>
 
-                    <div class="field">
-                        <label class="label">Authentication</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="ap_auth">
-                                    <option value="0">Open</option>
-                                    <option value="1">WPA2</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="field is-grouped pt-4">
-                        <div class="control">
-                            <button onclick="saveWifiAp()" class="button is-link">Save</button>
-                        </div>
-                        <div class="control">
-                            <button onclick="toggleModal('md_wifiap')" class="button is-dark">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="md_wificlient" class="modal">
-            <div class="modal-background"></div>
-            <div class="modal-content">
-                <div class="box">
-                    <h3 class="subtitle">Wifi Client<span id="tag_saveSta" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
-                    <div class="field">
-                        <label class="label">SSID / Name</label>
-                        <div class="control">
-                            <input id="sta_ssid" class="input" type="text" placeholder="myWifi">
-                        </div>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="label">Password</label>
-                        <div class="control">
-                            <input id="sta_pwd" class="input" type="password" placeholder="*********">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Enable Telemetry</label>
-                        <div class="control">
-                            <input id="sta_tlm" class="checkbox" type="checkbox" checked>
-                        </div>
-                    </div>
-                    
-                    <div class="field is-grouped pt-4">
-                        <div class="control">
-                            <button onclick="saveWifiClient()" class="button is-link">Save</button>
-                        </div>
-                        <div class="control">
-                            <button onclick="toggleModal('md_wificlient')" class="button is-dark">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         <!--
         <div id="md_dcss" class="modal">
             <div class="modal-background"></div>
@@ -177,134 +103,6 @@
         </div>
         -->
 
-        <div id="md_receiver" class="modal">
-            <div class="modal-background"></div>
-            <div class="modal-content">
-                <div class="box">
-                    <h3 class="subtitle">Receiver Setup<span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden">Settings Saved</span></h3>
-                    
-                    <div class="field is-grouped pt-4">
-                        <div class="control">
-                            <button onclick="setReceiverPresetUS()" class="button is-dark">US Sat</button>
-                            <button onclick="setReceiverPresetEU()" class="button is-dark">EU Sat</button>
-                            <button onclick="setReceiverRemoveTick()" class="button is-dark">-10khz</button>
-                            <button onclick="setReceiverAddTick()" class="button is-dark">+10khz</button>
-                        </div>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="label">Frequency (Hz)</label>
-                        <div class="control">
-                            <input id="rcv_freq" class="input" type="text" placeholder="2400000000">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Bandwidth</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="rcv_bw">
-                                    <option value="13">LORA_BW_0200</option>
-                                    <option value="14">LORA_BW_0400</option>
-                                    <option value="15">LORA_BW_0800</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Spreading factor</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="rcv_sf">
-                                    <option value="5">LORA_SF5</option>
-                                    <option value="6">LORA_SF6</option>
-                                    <option value="7">LORA_SF7</option>
-                                    <option value="8">LORA_SF8</option>
-                                    <option value="9">LORA_SF9</option>
-                                    <option value="10">LORA_SF10</option>
-                                    <option value="11">LORA_SF11</option>
-                                    <option value="12">LORA_SF12</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Coding rate</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="rcv_cr">
-                                    <option value="1">LORA_CR_4_5</option>
-                                    <option value="2">LORA_CR_4_6</option>
-                                    <option value="3">LORA_CR_4_7</option>
-                                    <option value="4">LORA_CR_4_8</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">LNB voltage</label>
-                        <div class="control">
-                            <input id="lnb_volt" class="checkbox" type="checkbox">
-                        </div>
-                    </div>
-                    
-                    <!--
-                    <div class="field">
-                        <label class="label">LO frequency (MHz)</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="rcv_loid">
-                                    <option value="0">300</option>
-                                    <option value="1">350</option>
-                                    <option value="2">400</option>
-                                    <option value="3">450</option>
-                                    <option value="4">500</option>
-                                    <option value="5">550</option>
-                                    <option value="6">600</option>
-                                    <option value="7">650</option>
-                                    <option value="8">700</option>
-                                    <option value="9">750</option>
-                                    <option value="10">800</option>
-                                    <option value="11">850</option>
-                                    <option value="12">900</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="label">Enable LO</label>
-                        <div class="control">
-                            <input id="lo_en" class="checkbox" type="checkbox">
-                        </div>
-                    </div>
-                -->
-
-                    <div class="field">
-                        <label class="label">Enable diseq (22kHz)</label>
-                        <div class="control">
-                            <input id="diseq" class="checkbox" type="checkbox">
-                        </div>
-                    </div>
-                    
-                    <div class="field is-grouped pt-4">
-                        <div class="control">
-                            <button onclick="saveReceiver()" class="button is-link">Save</button>
-                        </div>
-                        <div class="control">
-                            <button onclick="toggleModal('md_receiver')" class="button is-dark">Cancel</button>
-                        </div>
-                        <div class="control is-pulled-right">
-                            <button onclick="factoryReset()" id="btn_freset" class="button is-danger">Factory Reset</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div id="md_fileview" class="modal">
             <div class="modal-background"></div>
             <div class="modal-content is-fullwidth">
@@ -319,117 +117,117 @@
 
         <!-- Dashboard -->
         <div id="main_dash" class="tabs_main"  style="min-height: calc(100vh - 5rem);">
-        <section class="hero is-primary is-bold">
-            <div class="hero-body">
-                <div class="container">
-                    <h1 class="title">Welcome to Othernet</h1>
-                    <p class="subtitle">A BROADCAST FOR THE DIGITAL AGE</p>
+            <section class="hero is-primary is-bold">
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title">Welcome to Othernet</h1>
+                        <p class="subtitle">A BROADCAST FOR THE DIGITAL AGE</p>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="section">
-            <div class="container">
+            <section class="section">
+                <div class="container">
 
-                <div class="columns is-multiline">
-                    <div class="column is-6">
-                        <div class="columns is-multiline">
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Stats</h3>
-                                    <p>RSSI<span id="stats_rssi" class="is-pulled-right">-</span></p>
-                                    <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
-                                    <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
-                                    <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
-                                    <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
+                    <div class="columns is-multiline">
+                        <div class="column is-6">
+                            <div class="columns is-multiline">
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Stats</h3>
+                                        <p>RSSI<span id="stats_rssi" class="is-pulled-right">-</span></p>
+                                        <p>Packets Received<span id="stats_pkts" class="is-pulled-right">-</span></p>
+                                        <p>CRC Errors<span id="stats_crc" class="is-pulled-right">-</span></p>
+                                        <p>Header Errors<span id="stats_header" class="is-pulled-right">-</span></p>
+                                        <p>Bitrate<span id="stats_bitrate" class="is-pulled-right">-</span></p>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
-                                    <p id="stats_snr" class="is-size-2">-</p>
-                                    <small class="has-text-weight-bold has-text-grey">SNR</small>
+                                
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
+                                        <p id="stats_snr" class="is-size-2">-</p>
+                                        <small class="has-text-weight-bold has-text-grey">SNR</small>
 
-                                    <p><small id="stats_lora" class="has-text-grey">-</small></p>
-                                    <div class="is-flex pt-2">
-                                        <button onclick="receiverRemoveAndSaveTick()" class="button is-dark">-</button>
-                                        <p id="stats_freq" class="is-flex-grow-1 is-size-4 has-text-weight-bold has-text-grey has-text-centered">-</p>
-                                        <button onclick="receiverAddAndSaveTick()" class="button is-dark">+</button>
+                                        <p><small id="stats_lora" class="has-text-grey">-</small></p>
+                                        <div class="is-flex pt-2">
+                                            <button onclick="receiverRemoveAndSaveTick()" class="button is-dark">-</button>
+                                            <p id="stats_freq" class="is-flex-grow-1 is-size-4 has-text-weight-bold has-text-grey has-text-centered">-</p>
+                                            <button onclick="receiverAddAndSaveTick()" class="button is-dark">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column is-full">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Current Download</h3>
+                                        <p>Name</p>
+                                        <p id="stats_file">-</p>
+                                        <br>
+                                        <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
+                                        <progress id="stats_progressbar" class="progress is-primary mt-2" value="0" max="100"></progress>
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">LNB Status</h3>
+                                        <p>LNB enabled <span id="stats_lnben" class="is-pulled-right">-</span></p>
+                                        <p>LNB in range <span id="stats_lnbir" class="is-pulled-right">-</span></p>
+                                        <p>LNB connected <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
+                                        <p>LNB voltage <span id="stats_lnbv" class="is-pulled-right">-</span></p>
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Device Information</h3>
+                                        <p>Hardware Version: <span id="stats_hw" class="is-pulled-right">-</span></p>
+                                        <p>Firmware Version: <span id="stats_fw" class="is-pulled-right">-</span></p>
+                                        <p>IP Address: <span id="info_ip" class="is-pulled-right">-</span></p>
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Memory Status</h3>
+                                        <p>Free Heap <span id="stats_heap" class="is-pulled-right">-</span></p>
+                                        <p>Min Free heap <span id="stats_minheap" class="is-pulled-right">-</span></p>
+                                        <p>Free SPIram <span id="stats_psram" class="is-pulled-right">-</span></p>
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">SD Card Status</h3>
+                                        <p>Capacity <span id="stats_sdcap" class="is-pulled-right">-</span></p>
+                                        <p>Free <span id="stats_sdfree" class="is-pulled-right">-</span></p>
+                                        <p>Used <span id="stats_sdused" class="is-pulled-right">-</span></p>
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">CPU Load</h3>
+                                        <p class="is-size-2"><span id="stats_cpu">-</span>%</p>
+                                        <progress id="stats_cpubar" class="progress is-primary" value="0" max="100"></progress>
+                                    </div>
+                                </div>
+            
+                                <div class="column is-half">
+                                    <div class="notification p-4">
+                                        <h3 class="subtitle has-text-grey has-text-weight-semibold">Realtime</h3>
+                                        <button id="btn_play" onclick="toggleMidiStream()" class="button">Play</button>
+                                        <br>
+                                        <input type="range" id="volume" min="0" max="10" value="6">
+                                        <p id="voltext">-12</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="column is-full">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Current Download</h3>
-                                    <p>Name</p>
-                                    <p id="stats_file">-</p>
-                                    <br>
-                                    <p>Progress<span id="stats_progress" class="is-pulled-right">-</span></p>
-                                    <progress id="stats_progressbar" class="progress is-primary mt-2" value="0" max="100"></progress>
-                                </div>
-                            </div>
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">LNB Status</h3>
-                                    <p>LNB enabled <span id="stats_lnben" class="is-pulled-right">-</span></p>
-                                    <p>LNB in range <span id="stats_lnbir" class="is-pulled-right">-</span></p>
-                                    <p>LNB connected <span id="stats_lnbcon" class="is-pulled-right">-</span></p>
-                                    <p>LNB voltage <span id="stats_lnbv" class="is-pulled-right">-</span></p>
-                                </div>
-                            </div>
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Device Information</h3>
-                                    <p>Hardware Version: <span id="stats_hw" class="is-pulled-right">-</span></p>
-                                    <p>Firmware Version: <span id="stats_fw" class="is-pulled-right">-</span></p>
-                                    <p>IP Address: <span id="info_ip" class="is-pulled-right">-</span></p>
-                                </div>
-                            </div>
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Memory Status</h3>
-                                    <p>Free Heap <span id="stats_heap" class="is-pulled-right">-</span></p>
-                                    <p>Min Free heap <span id="stats_minheap" class="is-pulled-right">-</span></p>
-                                    <p>Free SPIram <span id="stats_psram" class="is-pulled-right">-</span></p>
-                                </div>
-                            </div>
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">SD Card Status</h3>
-                                    <p>Capacity <span id="stats_sdcap" class="is-pulled-right">-</span></p>
-                                    <p>Free <span id="stats_sdfree" class="is-pulled-right">-</span></p>
-                                    <p>Used <span id="stats_sdused" class="is-pulled-right">-</span></p>
-                                </div>
-                            </div>
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">CPU Load</h3>
-                                    <p class="is-size-2"><span id="stats_cpu">-</span>%</p>
-                                    <progress id="stats_cpubar" class="progress is-primary" value="0" max="100"></progress>
-                                </div>
-                            </div>
-        
-                            <div class="column is-half">
-                                <div class="notification p-4">
-                                    <h3 class="subtitle has-text-grey has-text-weight-semibold">Realtime</h3>
-                                    <button id="btn_play" onclick="toggleMidiStream()" class="button">Play</button>
-                                    <br>
-                                    <input type="range" id="volume" min="0" max="10" value="6">
-                                    <p id="voltext">-12</p>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                    <div class="column is-6">
-                        <div class="notification p-4">
-                            <h3 class="subtitle has-text-grey has-text-weight-semibold">Messages</h3>
-                            <div id="messages_dash" style="height: 50rem; overflow-y: auto; word-break: break-word;"></div>
+                        <div class="column is-6">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Messages</h3>
+                                <div id="messages_dash" style="height: 50rem; overflow-y: auto; word-break: break-word;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
         </div>
 
         <div id="main_files" class="tabs_main" style="display: none; min-height: calc(100vh - 5rem);">
@@ -484,6 +282,349 @@
                 </div>
             </section>
 
+        </div>
+
+        <div id="main_transmit" class="tabs_main" style="display: none; min-height: calc(100vh - 5rem);">
+            <section class="hero is-primary is-bold">
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title">Transmit with Your Dreamcatcher</h1>
+                        <p class="subtitle">FT8 and more</p>
+                    </div>
+                </div>
+            </section>
+    
+            <section class="section">
+                <div class="container">
+                    <div class="columns is-multiline">
+
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Status</h3>
+                                <p><span id="tag_TxStatus" class="tag is-info is-light is-medium">-</span></p>
+                                <br>
+                                <p id="tx_dtime" class="is-">-</p>
+                                <br>
+                                <button onclick="postSyncTime()" class="button is-dark">Sync Time with Device</button>
+                            </div>
+                        </div>
+                       
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Frequency (Hz)<span id="tag_saveTxFreq" class="tag is-success is-pulled-right is-hidden">Saved</span></h3>
+                                <div class="field">
+                                    <div class="control">
+                                        <input id="tx_freq" class="input" type="text" placeholder="2400000000">
+                                    </div>
+                                </div>
+                                <div class="field is-flex pt-2 is-justify-content-space-between">
+                                    <button onclick="setTxRemoveTick()" class="button is-dark">-10 kHz</button>
+                                    <button onclick="setTxAddTick()" class="button is-dark">+10 kHz</button>
+                                </div>
+                                <div class="field is-grouped pt-4">
+                                    <div class="control">
+                                        <button onclick="saveTxFreq()" class="button is-link">Set Frequency</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-half">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">FT8 Transmitter</h3>
+                                
+                                <div class="is-flex">
+                                    <div class="field is-horizontal">
+                                        <label class="label">Tx on Odd Cycle</label>
+                                        <div class="control pl-4">
+                                            <input id="ft8_odd" class="checkbox" type="checkbox">
+                                        </div>
+                                    </div>
+                                    <div class="field is-horizontal pl-4">
+                                        <label class="label">Use Free Text (max 13 characters)</label>
+                                        <div class="control pl-4">
+                                            <input id="ft8_text" class="checkbox" type="checkbox">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="field">
+                                    <label class="label">Message</label>
+                                    <div class="control">
+                                        <input id="ft8_msg" class="input" type="text" placeholder="CQ DO5TY">
+                                    </div>
+                                </div>
+                                <br>
+                                <button id="btn_txft8" onclick="postTxFT8()" class="button is-link">Send Message</button>
+                            </div>
+                        </div>
+
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">CW Transmitter</h3>
+                                <p class="is-size-7">Use Toggle CW to enable enable a continous tone for testing purposes.</p>
+                                <br>
+                                <p class="is-size-7">CW Paddle transmits a CW for as long as the button is held.</p>
+                                <br>
+                                <div class="field is-horizontal">
+                                    <label class="label">Enable Keyboard Input</label>
+                                    <div class="control pl-4">
+                                        <input id="cw_keys" class="checkbox" type="checkbox">
+                                    </div>
+                                </div>
+                                <p class="is-size-7">The keyboard may be used as a Morse Code paddle. C is a dot and W is a dash.</p>
+                                <br>
+                                <button id="btn_startcw" onclick="toggleCW()" class="button is-link">Toggle CW</button>
+                                <button id="btn_startcw" onmousedown="toggleCW()" onmouseup="toggleCW()" class="button is-link is-pulled-right">CW Paddle</button>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="main_receive" class="tabs_main" style="display: none; min-height: calc(100vh - 5rem);">
+            <section class="hero is-primary is-bold">
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title">Receive with Your Dreamcatcher</h1>
+                        <p class="subtitle">From Space to Earth and more</p>
+                    </div>
+                </div>
+            </section>
+    
+            <section class="section">
+                <div class="container">
+                    <div class="columns is-multiline">
+                        
+                        <div class="column is-one-third">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Status</h3>
+                                <p id="rcv_snr" class="is-size-2">-</p>
+                                <small class="has-text-weight-bold has-text-grey">SNR</small>
+                                <p>RSSI<span id="rcv_rssi" class="is-pulled-right">-</span></p>
+                                <p>Packets Received<span id="rcv_pkts" class="is-pulled-right">-</span></p>
+                                <p>CRC Errors<span id="rcv_crc" class="is-pulled-right">-</span></p>
+                                <p>Header Errors<span id="rcv_header" class="is-pulled-right">-</span></p>
+                                <p>Bitrate<span id="rcv_bitrate" class="is-pulled-right">-</span></p>
+                            </div>
+                        </div>
+
+                        <div class="column is-two-thirds">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Receiver Setup<span id="tag_saveRcv" class="tag is-success is-pulled-right is-hidden">Saved</span></h3>
+                                <div class="columns">
+                                    <div class="column is-half">
+                                        <div class="field is-flex pt-2">
+                                            <input id="rcv_freq" class="input" type="text" placeholder="2400000000">
+                                        </div>
+                                        <div class="field is-flex pt-2 is-justify-content-space-between">
+                                            <button onclick="setReceiverRemoveTick()" class="button is-dark">-10 kHz</button>
+                                            <button onclick="setReceiverPresetUS()" class="button is-dark">US Sat</button>
+                                            <button onclick="setReceiverPresetEU()" class="button is-dark">EU Sat</button>
+                                            <button onclick="setReceiverAddTick()" class="button is-dark">+10 kHz</button>
+                                        </div>
+                                        <div class="field">
+                                            <label class="label">LNB voltage</label>
+                                            <div class="control">
+                                                <input id="lnb_volt" class="checkbox" type="checkbox">
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label class="label">Enable diseq (22kHz)</label>
+                                            <div class="control">
+                                                <input id="diseq" class="checkbox" type="checkbox">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="column pl-6">
+                                        <div class="field">
+                                            <label class="label">Bandwidth</label>
+                                            <div class="control">
+                                                <div class="select">
+                                                    <select id="rcv_bw">
+                                                        <option value="13">LORA_BW_0200</option>
+                                                        <option value="14">LORA_BW_0400</option>
+                                                        <option value="15">LORA_BW_0800</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                    
+                                        <div class="field">
+                                            <label class="label">Spreading factor</label>
+                                            <div class="control">
+                                                <div class="select">
+                                                    <select id="rcv_sf">
+                                                        <option value="5">LORA_SF5</option>
+                                                        <option value="6">LORA_SF6</option>
+                                                        <option value="7">LORA_SF7</option>
+                                                        <option value="8">LORA_SF8</option>
+                                                        <option value="9">LORA_SF9</option>
+                                                        <option value="10">LORA_SF10</option>
+                                                        <option value="11">LORA_SF11</option>
+                                                        <option value="12">LORA_SF12</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                    
+                                        <div class="field">
+                                            <label class="label">Coding rate</label>
+                                            <div class="control">
+                                                <div class="select">
+                                                    <select id="rcv_cr">
+                                                        <option value="1">LORA_CR_4_5</option>
+                                                        <option value="2">LORA_CR_4_6</option>
+                                                        <option value="3">LORA_CR_4_7</option>
+                                                        <option value="4">LORA_CR_4_8</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--
+                                        <div class="field">
+                                            <label class="label">LO frequency (MHz)</label>
+                                            <div class="control">
+                                                <div class="select">
+                                                    <select id="rcv_loid">
+                                                        <option value="0">300</option>
+                                                        <option value="1">350</option>
+                                                        <option value="2">400</option>
+                                                        <option value="3">450</option>
+                                                        <option value="4">500</option>
+                                                        <option value="5">550</option>
+                                                        <option value="6">600</option>
+                                                        <option value="7">650</option>
+                                                        <option value="8">700</option>
+                                                        <option value="9">750</option>
+                                                        <option value="10">800</option>
+                                                        <option value="11">850</option>
+                                                        <option value="12">900</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="field">
+                                            <label class="label">Enable LO</label>
+                                            <div class="control">
+                                                <input id="lo_en" class="checkbox" type="checkbox">
+                                            </div>
+                                        </div>
+                                    -->
+                                    </div>
+                                </div>
+                                <div class="field is-grouped pt-4">
+                                    <div class="control">
+                                        <button onclick="saveReceiver()" class="button is-link">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="main_wifi" class="tabs_main" style="display: none; min-height: calc(100vh - 5rem);">
+            <section class="hero is-primary is-bold">
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title">Connect your Dreamcatcher</h1>
+                        <p class="subtitle">Wifi and Telemetry</p>
+                    </div>
+                </div>
+            </section>
+    
+            <section class="section">
+                <div class="container">
+                    <div class="columns is-multiline">
+                       
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Wifi Access Point<span id="tag_saveAp" class="tag is-success is-pulled-right is-hidden">Saved</span></h3>
+                                <div class="field">
+                                    <label class="label">SSID / Name</label>
+                                    <div class="control">
+                                        <input id="ap_ssid" class="input" type="text" placeholder="Othernet DC4">
+                                    </div>
+                                </div>
+                                
+                                <div class="field">
+                                    <label class="label">Password</label>
+                                    <div class="control">
+                                        <input id="ap_pwd" class="input" type="password" placeholder="*********">
+                                    </div>
+                                </div>
+            
+                                <div class="field">
+                                    <label class="label">Authentication</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select id="ap_auth">
+                                                <option value="0">Open</option>
+                                                <option value="1">WPA2</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="field is-grouped pt-4">
+                                    <div class="control">
+                                        <button onclick="saveWifiAp()" class="button is-link">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Wifi Client<span id="tag_saveSta" class="tag is-success is-pulled-right is-hidden">Saved</span></h3>
+                                
+                                <div class="field">
+                                    <label class="label">SSID / Name</label>
+                                    <div class="control">
+                                        <input id="sta_ssid" class="input" type="text" placeholder="myWifi">
+                                    </div>
+                                </div>
+                                
+                                <div class="field">
+                                    <label class="label">Password</label>
+                                    <div class="control">
+                                        <input id="sta_pwd" class="input" type="password" placeholder="*********">
+                                    </div>
+                                </div>
+            
+                                <div class="field">
+                                    <label class="label">Enable Telemetry</label>
+                                    <div class="control">
+                                        <input id="sta_tlm" class="checkbox" type="checkbox" checked>
+                                    </div>
+                                </div>
+                                
+                                <div class="field is-grouped pt-4">
+                                    <div class="control">
+                                        <button onclick="saveWifiClient()" class="button is-link">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-one-quarter">
+                            <div class="notification p-4">
+                                <h3 class="subtitle has-text-grey has-text-weight-semibold">Other Settings</h3>
+                                <p>The Facotry Reset will return everything to the default configuration of your Dreamcatcher</p>
+                                <div class="control pt-4">
+                                    <button onclick="factoryReset()" id="btn_freset" class="button is-danger">Factory Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <footer class="footer">
