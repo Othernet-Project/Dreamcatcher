@@ -67,9 +67,8 @@ void loop()
     char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
     sprintf(newLogEntry,"Uptime: %lus", millis()/1000);
     logToFile(newLogEntry);
-    //Serial.print("Loop on Core: ");
-    //Serial.println (xPortGetCoreID());
-    //heap_caps_print_heap_info(MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT);
+
+    getFreeSpace();
   }
 
   if (telemetryUpdate >= 1800000UL)
@@ -82,7 +81,6 @@ void loop()
       char *newLogEntry = (char*) heap_caps_malloc(512, MALLOC_CAP_SPIRAM);
       sprintf(newLogEntry,"Sending Telemetry to Othernet backend, Uptime: %lus", millis()/1000);
       logToFile(newLogEntry);
-      //send_telemetry();
       xSemaphoreGive(send_tlm);
     }
   }
@@ -129,11 +127,10 @@ void setup()
   if(initSDcard() != ESP_OK) {
     sdCardPresent = false;
 
-    Serial.println("NO SD Card, trying SPIFFS");
-   /*if(initSPIFFS() != ESP_OK) {
-      log_e("error to init sd card and spiffs storage");
-      Serial.println("Error on SPIFFS Init");
-    }*/
+    Serial.println("NO SD Card, trying LittleFS");
+    if(initSPIFFS() != ESP_OK) {
+      Serial.println("Error on LittleFS Init");
+    }
   }
 
   // enable RF section
@@ -163,6 +160,7 @@ void setup()
 
   bWire = Wire.begin(I2C_SDA, I2C_SCL);
   vTaskPrioritySet(NULL, 5);
+  delay(5000);
   loadSettings();
 
   send_tlm = xSemaphoreCreateBinary();

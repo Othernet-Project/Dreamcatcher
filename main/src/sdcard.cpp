@@ -5,6 +5,7 @@
 #include <driver/sdspi_host.h>
 #include "driver/sdmmc_host.h"
 #include <esp_spiffs.h>
+#include <esp_littlefs.h>
 #include <esp_vfs_fat.h>
 #include <sdmmc_cmd.h>
 #include <sys/stat.h>
@@ -16,6 +17,7 @@
 #include <sys/unistd.h>
 #include <dirent.h>
 #include "SPIFFS.h"
+#include "LittleFS.h"
 
 static char VFS_MOUNT[] = "/files";
 uint8_t pdrv;
@@ -24,9 +26,21 @@ struct dirent *entry;
 struct stat entry_stat;
 static size_t spiffstotal = 0, spiffsused = 0;
 
+uint64_t usedSpace = 0;
+uint64_t maxSpace = 0;
+
+extern bool sdCardPresent;
+
 static const char *TAG = "sd_card";
 
 static const char *LOG_PATH = "/files/log/log.txt";
+
+esp_vfs_littlefs_conf_t littlefsConf = {
+    .base_path = VFS_MOUNT,
+    .partition_label = "spiffs",
+    .format_if_mount_failed = true,
+    .dont_mount = false,
+};
 
 // saves a String to a Log File
 bool logToFile(char *logText){
@@ -179,87 +193,109 @@ void clearTmp()
 
 esp_err_t initSPIFFS()
 {
-    // if(!SPIFFS.begin(true, VFS_MOUNT)){
-    //     Serial.println("SPIFFS Mount Failed");
-    //     return ESP_FAIL;
-    // }
-    // return ESP_OK;
+    Serial.println("Initializing LITTLEFS");
 
-
-    Serial.println("Initializing SPIFFS");
-
-    esp_vfs_spiffs_conf_t conf = {
-      .base_path = VFS_MOUNT,
-      .partition_label = "spiffs",
-      .max_files = 5,
-      .format_if_mount_failed = true
-    };
-
-    // Use settings defined above to initialize and mount SPIFFS filesystem.
-    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    // Use settings defined above to initialize and mount LittleFS filesystem.
+    // Note: esp_vfs_littlefs_register is an all-in-one convenience function.
+    esp_err_t ret = esp_vfs_littlefs_register(&littlefsConf);
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
-            Serial.println("Failed to mount or format filesystem");
+            Serial.printf("Failed to mount or format filesystem");
         } else if (ret == ESP_ERR_NOT_FOUND) {
-            Serial.println("Failed to find SPIFFS partition");
+            Serial.printf("Failed to find LittleFS partition");
         } else {
-            Serial.printf("Failed to initialize SPIFFS (%s) \n", esp_err_to_name(ret));
+            Serial.printf("Failed to initialize LittleFS (%s)", esp_err_to_name(ret));
         }
         return ret;
     }
 
-    ret = esp_spiffs_info(conf.partition_label, &spiffstotal, &spiffsused);
+    size_t total = 0, used = 0;
+    ret = esp_littlefs_info(littlefsConf.partition_label, &total, &used);
     if (ret != ESP_OK) {
-        Serial.printf("Failed to get SPIFFS partition information (%s) \n", esp_err_to_name(ret));
+        Serial.printf("Failed to get LittleFS partition information (%s)", esp_err_to_name(ret));
+        esp_littlefs_format(littlefsConf.partition_label);
     } else {
-        Serial.printf("Partition size: total: %d, used: %d \n", spiffstotal, spiffsused);
+        Serial.printf("Partition size: total: %d, used: %d", total, used);
     }
-
     cleanup();
 
     return ret;
+}
+
+extern "C" void getFreeSpace()
+{
+    Serial.println("Get free space!");
+    if(sdCardPresent) {
+        FATFS *fs;
+        DWORD c;
+        if (f_getfree("/files", &c, &fs) == FR_OK)
+        {
+            usedSpace =
+                ((uint64_t)fs->csize * (fs->n_fatent - 2 - fs->free_clst)) * fs->ssize;
+            maxSpace = ((uint64_t)fs->csize * (fs->n_fatent - 2)) * fs->ssize;
+        }
+    } else {
+        size_t total = 1337, used = 42;
+        
+        esp_err_t ret = esp_littlefs_info(littlefsConf.partition_label, &total, &used);
+        if (ret != ESP_OK) {
+            Serial.printf("Failed to get LittleFS partition information (%s)", esp_err_to_name(ret));
+            esp_littlefs_format(littlefsConf.partition_label);
+        } else {
+            Serial.printf("Partition size: total: %d, used: %d", total, used);
+        }
+        
+        usedSpace = (uint64_t)used;
+        maxSpace = (uint64_t)total;
+    }
 }
 
 extern "C" esp_err_t formatSD()
 {
     FRESULT res = FR_OK;
     esp_err_t err = ESP_OK;
-    const size_t workbuf_size = 4096;
-    void *workbuf = NULL;
-    Serial.println("partitioning card");
+ 
+    if(!sdCardPresent) {
+        //LittleFS is used _> Formatting it
+        Serial.println("formatting LittleFS");
+        esp_littlefs_format(littlefsConf.partition_label);
+    } else {
+        const size_t workbuf_size = 4096;
+        void *workbuf = NULL;
+        Serial.println("partitioning card");
 
-    workbuf = ff_memalloc(workbuf_size);
-    if (workbuf == NULL)
-    {
-        return ESP_ERR_NO_MEM;
-    }
+        workbuf = ff_memalloc(workbuf_size);
+        if (workbuf == NULL)
+        {
+            return ESP_ERR_NO_MEM;
+        }
 
-    DWORD plist[] = {100, 0, 0, 0};
-    res = f_fdisk(pdrv, plist, workbuf);
-    if (res != FR_OK)
-    {
-        err = ESP_FAIL;
-        ESP_LOGE(TAG, "f_fdisk failed (%d)", res);
-    }
-    else
-    {
-        size_t alloc_unit_size = 512;
-        char drv[3] = {'0', ':', 0};
-        ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-        res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
+        DWORD plist[] = {100, 0, 0, 0};
+        res = f_fdisk(pdrv, plist, workbuf);
         if (res != FR_OK)
         {
             err = ESP_FAIL;
-            ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
+            ESP_LOGE(TAG, "f_fdisk failed (%d)", res);
         }
-    }
-    mkdir("/files/tmp", 0755);  // add tmp folder
-    mkdir("/files/log", 0755);  // add log folder
+        else
+        {
+            size_t alloc_unit_size = 512;
+            char drv[3] = {'0', ':', 0};
+            ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
+            res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
+            if (res != FR_OK)
+            {
+                err = ESP_FAIL;
+                ESP_LOGE(TAG, "f_mkfs failed (%d)", res);
+            }
+        }
+        mkdir("/files/tmp", 0755);  // add tmp folder
+        mkdir("/files/log", 0755);  // add log folder
 
-    Serial.println("partitioning card finished");
-    free(workbuf);
+        Serial.println("partitioning card finished");
+        free(workbuf);
+    }
     return err;
 }
 

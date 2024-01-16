@@ -41,7 +41,10 @@ extern void storeWifiCredsAP(char* ssid, char* pass);
 extern void storeWifiCredsSTA(char* ssid, char* pass, bool tlm);
 extern void updateLoraSettings(uint32_t freq, uint8_t bw, uint8_t sf, uint8_t cr);
 extern void getMidi(char* _txtarray);
+extern void getFreeSpace();
 
+extern uint64_t usedSpace;
+extern uint64_t maxSpace;
 
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
@@ -77,24 +80,6 @@ httpd_handle_t server = NULL;       //global webserver handle
 static const char *TAG = "web_server";
 static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
 void getFreeStorageSPIFFS(uint64_t* total, uint64_t* used);
-
-/*
-static void getFreeSpace(uint64_t* used_space, uint64_t* max_space)
-{
-    if(sdCardPresent) {
-        FATFS *fs;
-        DWORD c;
-        if (f_getfree("/files", &c, &fs) == FR_OK)
-        {
-            *used_space =
-                ((uint64_t)fs->csize * (fs->n_fatent - 2 - fs->free_clst)) * fs->ssize;
-            *max_space = ((uint64_t)fs->csize * (fs->n_fatent - 2)) * fs->ssize;
-        }
-    } else {
-        *used_space = 1;
-        *max_space = 1;
-    }
-}*/
 
 /**
  * Make files tree to JSON string
@@ -149,16 +134,7 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
     httpd_resp_sendstr_chunk(req, _script);
     memset(_script, 0, 500);
 
-    if (!sdCardPresent)
-    {
-        portENTER_CRITICAL(&sxMux);
-        //entry = readdir(dir);
-        entry = NULL;
-        portEXIT_CRITICAL(&sxMux);
-
-    } else {
-        entry = readdir(dir);
-    }
+    entry = readdir(dir);
 
     while (entry != NULL) {
         entrytype = (entry->d_type == DT_DIR ? "directory" : "file");
@@ -167,15 +143,8 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
 
         int st = 0;
 
-        if (!sdCardPresent)
-        {
-            portENTER_CRITICAL(&sxMux);
-                //st = stat(entrypath, &entry_stat);
-            portEXIT_CRITICAL(&sxMux);
+        st = stat(entrypath, &entry_stat);
 
-        } else {
-            st = stat(entrypath, &entry_stat);
-        }
         if (st == -1) {
             ESP_LOGE(TAG, "Failed to stat %s : %s", entrytype, entry->d_name);
             continue;
@@ -206,16 +175,9 @@ static esp_err_t http_resp_dir_js(httpd_req_t *req, const char *dirpath)
         n++;
         httpd_resp_sendstr_chunk(req, _script);
         memset(_script, 0, 500);
-        if (!sdCardPresent)
-        {
-            portENTER_CRITICAL(&sxMux);
-            //entry = readdir(dir);
-            entry = NULL;
-            portEXIT_CRITICAL(&sxMux);
 
-        } else {
-            entry = readdir(dir);
-        }
+        entry = readdir(dir);
+
     }
     closedir(dir);
     strlcpy(_script + strlen(_script), "]", 2);
@@ -350,9 +312,6 @@ static void ws_async_send(void *arg)
     extern uint16_t offset;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
-    uint64_t used_space = 0;
-    uint64_t max_space = 0;
-    getFreeSpace(&used_space, &max_space);
 
     int8_t snr = 0, rssi = 0;
     uint16_t crc = 0, header = 0;
@@ -389,8 +348,8 @@ static void ws_async_send(void *arg)
         bitrate,
         filepacket + 1,
         filepackets,
-        used_space,
-        max_space,
+        usedSpace,
+        maxSpace,
         "path",
         filename,
         tstamp
@@ -426,9 +385,6 @@ static esp_err_t stats_handler(httpd_req_t *req)
     extern uint16_t offset;
 
     char* data = heap_caps_malloc(1500, MALLOC_CAP_SPIRAM);
-    uint64_t used_space = 0;
-    uint64_t max_space = 0;
-    getFreeSpace(&used_space, &max_space);
 
     int8_t snr = 0, rssi = 0;
     uint16_t crc = 0, header = 0;
@@ -461,8 +417,8 @@ static esp_err_t stats_handler(httpd_req_t *req)
         bitrate,
         filepacket + 1,
         filepackets,
-        used_space,
-        max_space,
+        usedSpace,
+        maxSpace,
         "path",
         filename,
         tstamp
@@ -824,6 +780,7 @@ static esp_err_t files_tree_handler(httpd_req_t *req)
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Filename too long");
         return ESP_FAIL;
     }
+
     /* If name has trailing '/', respond with directory contents */
     if (filename[strlen(filename) - 1] == '/') {
         return http_resp_dir_js(req, filename);
@@ -912,7 +869,7 @@ void web_server()
      * target URIs which match the wildcard scheme */
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_open_sockets = 7;
-    config.stack_size = 10 * 1024;
+    config.stack_size = 16 * 1024;
     config.max_uri_handlers = 16;
 
     ESP_LOGI(TAG, "Starting HTTP Server");

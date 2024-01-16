@@ -37,6 +37,9 @@ extern uint8_t SpreadingFactor;        //LoRa spreading factor
 extern uint8_t CodeRate;            //LoRa coding rate
 extern uint8_t PacketLength;
 
+extern uint64_t usedSpace;
+extern uint64_t maxSpace;
+
 extern bool bEnableTlm;
 
 extern int8_t TXpower;                      //LoRa transmit power in dBm
@@ -49,6 +52,7 @@ void readMBR();
 esp_err_t initSDcard();
 bool logToFile(char *logText);
 esp_err_t initSPIFFS();
+void getFreeSpace();
 void testStuff();
 void initLR1110();
 void getLR1110Info();

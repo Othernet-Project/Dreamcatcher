@@ -164,6 +164,7 @@ async function getMessages() {
     for (const folder of folders) {
         if(folder.name != "Up" && folder.dir == 1){ 
             let newFiles = JSON.parse(synchronousRequest(folder.path+'/'))
+            newFiles = newFiles.filter((f) => f.dir == 0);
             files = files.concat(newFiles)
             if (files.length >= 4) break
         }
@@ -171,7 +172,7 @@ async function getMessages() {
 
     files = sortArrayOfObjects(files, 'name', true)
     files = files.slice(1, 5)
-    
+
     let msgList = '<table class="table is-fullwidth"><thead><tr><th style="width:7rem">Call</th><th>Message</th></tr></thead>'
     for (const msgFile of files) {
         //check if tbz2 file or not, if not use txt
@@ -273,7 +274,7 @@ function filestree(json) {
                 toggleModal('md_fileview');
                 viewFile(element.path, fileExt, element.name);
             }
-            info.innerText = fileExt + ' - ' + element.size + ' bytes';
+            info.innerText = fileExt + ' - ' + (element.size/1000).toFixed(1) + ' kBytes';
         }
 
         wrapper.appendChild(iconwrap);
