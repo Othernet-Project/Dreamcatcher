@@ -15,6 +15,9 @@ extern bool sdCardPresent;
 extern SemaphoreHandle_t send_tlm;
 static const char *TAG = "wifi";
 
+extern uint64_t usedSpace;
+extern uint64_t maxSpace;
+
 WiFiMulti WiFiMulti;
 
 void initWifi(char* ssid_ap, char* pass_ap)
@@ -199,23 +202,6 @@ void wifi_init_sta(char* ssid, char* pass)
     sprintf(myIP,"%s", WiFi.localIP().toString().c_str());
 }
 
-void getFreeSpace(uint64_t* used_space, uint64_t* max_space)
-{
-    if(sdCardPresent) {
-        FATFS *fs;
-        DWORD c;
-        if (f_getfree("/files", &c, &fs) == FR_OK)
-        {
-            *used_space =
-                ((uint64_t)fs->csize * (fs->n_fatent - 2 - fs->free_clst)) * fs->ssize;
-            *max_space = ((uint64_t)fs->csize * (fs->n_fatent - 2)) * fs->ssize;
-        }
-    } else {
-        *used_space = 1;
-        *max_space = 1;
-    }
-}
-
 const char telemetry_rootca[] PROGMEM = R"=====(
 -----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
@@ -300,10 +286,6 @@ void send_telemetry(void *pvParameter)
             // send telemetry to server
             char telemetryPayload[1500];
 
-            uint64_t used_space = 100;
-            uint64_t max_space = 30000;
-            getFreeSpace(&used_space, &max_space);
-
             int8_t snr = 1, rssi = 2;
             uint16_t crc = 11, header = 12;
             getStats(&crc, &header);
@@ -331,8 +313,8 @@ void send_telemetry(void *pvParameter)
                 0,
                 bitrate,
                 pktrate,
-                used_space,
-                max_space,
+                usedSpace,
+                maxSpace,
                 filename
             );
 

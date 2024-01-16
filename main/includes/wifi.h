@@ -16,8 +16,6 @@ void getPacketStats(int8_t*, int8_t*);
 void web_server();
 void send_telemetry(void *pvParameter);
 
-void getFreeSpace(uint64_t* used_space, uint64_t* max_space);
-
 extern SemaphoreHandle_t send_tlm;
 
 #ifdef __cplusplus
