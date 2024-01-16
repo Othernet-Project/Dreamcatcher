@@ -1,10 +1,16 @@
-This firmware runs on the Othernet Dreamcatcher satellite data receiver. The receiver's primary component's include the ESP32/ESP32-S2 from Espressif Systems, Semtech SX1281 LoRa transceiver, Texas Instruments TPS-65235 13V regulator, and Microchip MIC5353 3.3V regulator.
+This firmware runs on the Othernet Dreamcatcher satellite data receiver. The receiver's primary component's include the ESP32-S3 from Espressif Systems, Semtech LR11xx LoRa transceiver, Texas Instruments TPS-65235 13V regulator, and Microchip MIC5353 3.3V regulator.
 
-This firmware has been tested on both the ESP32 and ESP32-S2 wifi microntrollers. Due to high memory usage only wrover modules/boards will work (with SPIRAM). The Dreamcatcher 4 should be available for purchase in April of 2021. 
+This firmware has been tested on ESP32-S3 wifi microntrollers. Due to high memory usage only wrover modules/boards will work (with SPIRAM). The Dreamcatcher 4 should be available for purchase in April of 2021. 
 
-This firmware is used to control the voltage to a standard, commercially-available satellite LNB. The LNB takes a 12 GHz signal and downconverts it to a range that can be received by the SX1281. The SX1281 demodulates the downconverted LoRa carrier and sends packets to the ESP32 over SPI. Downloaded packets are turned into files and stored on the microSD. 
+This firmware is used to control the voltage to a standard, commercially-available satellite LNB. The LNB takes a 12 GHz signal and downconverts it to a range that can be received by the LR11xx. The LR11xx demodulates the downconverted LoRa carrier and sends packets to the ESP32 over SPI. Downloaded packets are turned into files and stored on the microSD. 
 
-The ESP32 can create a wifi access point and also connect to an existing wifi network. By defaul, Dreamcatcher operates in access point (AP) mode. Changes to wifi settings can be made through the web interface. Configuration of the SX1281 (frequency, spreading factor, coding rate) is also done through the web interface.
+The ESP32 can create a wifi access point and also connect to an existing wifi network. By defaul, Dreamcatcher operates in access point (AP) mode. Changes to wifi settings can be made through the web interface. Configuration of the LR11xx (frequency, spreading factor, coding rate) is also done through the web interface.
+
+# Known issues
+
+* without an SD-Card the software can get slow/crash due to LittleFS and SPI Flash lmitations
+* The ram can fill up due to a memory leak, this is mitgated currently by an automatic reboot of the ESP every few hours
+* listing folder content can be a bit slow if there are a lot of files (over 100) in a single folder
 
 # Getting started
 
